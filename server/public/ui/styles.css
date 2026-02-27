@@ -727,7 +727,7 @@ input,select,textarea{font-family:inherit}
 
     /* Setup layout — horizontal scrollable tabs on tablet */
     .setup-layout{flex-direction:column;gap:0}
-    .setup-sidebar{min-width:0;width:100%;flex-direction:row;overflow-x:auto;overflow-y:hidden;gap:4px;padding:8px 16px;border-bottom:1px solid var(--border);-webkit-overflow-scrolling:touch;scrollbar-width:none}
+    .setup-sidebar{min-width:0;width:100%;flex-direction:row;overflow-x:auto;overflow-y:hidden;gap:4px;padding:8px 16px;border-bottom:1px solid var(--border)}
     .setup-sidebar::-webkit-scrollbar{display:none}
     .setup-tab{padding:6px 12px;font-size:12px;flex-shrink:0}
     .setup-tab i{font-size:13px}
