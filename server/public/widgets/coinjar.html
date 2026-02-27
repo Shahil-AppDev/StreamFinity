@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>StreamFinity | Coin Jar</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',system-ui,sans-serif;background:transparent;color:#fff;display:flex;align-items:flex-end;justify-content:center;height:100vh;padding:20px}
+.jar{width:180px;text-align:center;position:relative}
+.jar-glass{width:140px;height:200px;margin:0 auto;border-radius:0 0 30px 30px;border:3px solid rgba(255,255,255,.2);border-top:none;position:relative;overflow:hidden;background:rgba(15,15,25,.4);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
+.jar-rim{width:160px;height:16px;margin:0 auto;border-radius:8px 8px 0 0;background:rgba(255,255,255,.15);border:2px solid rgba(255,255,255,.2);border-bottom:none}
+.jar-fill{position:absolute;bottom:0;left:0;right:0;background:linear-gradient(180deg,#f59e0b,#f97316);transition:height .8s cubic-bezier(.22,1,.36,1);border-radius:0 0 27px 27px}
+.jar-fill::after{content:'';position:absolute;top:0;left:0;right:0;height:8px;background:rgba(255,255,255,.2);border-radius:4px}
+.jar-count{font-size:28px;font-weight:800;margin-top:12px;background:linear-gradient(135deg,#f59e0b,#fbbf24);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+.jar-label{font-size:11px;color:rgba(255,255,255,.4);margin-top:4px;text-transform:uppercase;letter-spacing:1px}
+.coin-drop{position:absolute;font-size:18px;pointer-events:none;animation:coinDrop .6s ease-in forwards}
+@keyframes coinDrop{0%{opacity:1;transform:translateY(-60px) rotate(0deg)}100%{opacity:0;transform:translateY(0) rotate(180deg)}}
+.jar-count.bump{animation:bump .3s ease}
+@keyframes bump{50%{transform:scale(1.1)}}
+</style>
+</head>
+<body>
+<div class="jar">
+    <div class="jar-rim"></div>
+    <div class="jar-glass"><div class="jar-fill" id="fill"></div></div>
+    <div class="jar-count" id="count">0</div>
+    <div class="jar-label">coins collected</div>
+</div>
+<script src="/widgets/sf-bridge.js"></script>
+<script>
+(function(){
+'use strict';
+var fillEl=document.getElementById('fill');
+var countEl=document.getElementById('count');
+var total=0,target=10000;
+
+function render(){
+    var pct=Math.min(100,Math.round((total/target)*100));
+    fillEl.style.height=pct+'%';
+    countEl.textContent=total.toLocaleString();
+    countEl.classList.remove('bump');void countEl.offsetWidth;countEl.classList.add('bump');
+}
+
+function dropCoin(){
+    var el=document.createElement('div');
+    el.className='coin-drop';
+    el.textContent='🪙';
+    el.style.left=(30+Math.random()*80)+'px';
+    el.style.top='0';
+    document.querySelector('.jar-glass').appendChild(el);
+    setTimeout(function(){el.remove();},600);
+}
+
+SF.on('gift',function(d){
+    var coins=d.diamondCount||1;
+    total+=coins;
+    render();
+    for(var i=0;i<Math.min(coins,5);i++) setTimeout(dropCoin,i*120);
+});
+
+if(SF.preview){
+    total=3200;render();
+    setInterval(function(){total+=Math.ceil(Math.random()*100);render();dropCoin();},3000);
+}
+})();
+</script>
+</body>
+</html>

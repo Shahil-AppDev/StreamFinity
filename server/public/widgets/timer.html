@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>StreamFinity | Timer</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',system-ui,sans-serif;background:transparent;color:#fff;display:flex;align-items:center;justify-content:center;height:100vh}
+.t{text-align:center;padding:28px 56px;border-radius:20px;background:rgba(15,15,25,.8);-webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px);border:1px solid rgba(255,255,255,.08);position:relative;overflow:hidden}
+.ring{position:absolute;inset:0;pointer-events:none}
+.ring svg{width:100%;height:100%;position:absolute;inset:0}
+.ring circle{fill:none;stroke-width:3;stroke-linecap:round;transform:rotate(-90deg);transform-origin:center}
+.ring .bg{stroke:rgba(255,255,255,.06)}
+.ring .fg{stroke:url(#grad);transition:stroke-dashoffset .8s ease}
+.inner{position:relative;z-index:1}
+.digits{font-size:64px;font-weight:800;font-variant-numeric:tabular-nums;letter-spacing:3px;background:linear-gradient(135deg,#fff,rgba(255,255,255,.75));-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;line-height:1.1}
+.digits.warn{-webkit-text-fill-color:#ef4444;animation:warnPulse 1s ease infinite}
+.lbl{font-size:13px;color:rgba(255,255,255,.45);margin-top:8px;font-weight:500;letter-spacing:1px;text-transform:uppercase}
+.added{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:20px;font-weight:700;color:#10b981;opacity:0;pointer-events:none;z-index:2}
+.added.show{animation:addedPop .8s ease forwards}
+@keyframes warnPulse{0%,100%{opacity:1}50%{opacity:.5}}
+@keyframes addedPop{0%{opacity:1;transform:translate(-50%,-50%) scale(1)}100%{opacity:0;transform:translate(-50%,-80%) scale(1.3)}}
+</style>
+</head>
+<body>
+<div class="t">
+    <svg width="0" height="0"><defs><linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#8b5cf6"/><stop offset="100%" stop-color="#3b82f6"/></linearGradient></defs></svg>
+    <div class="inner">
+        <div class="digits" id="digits">05:00</div>
+        <div class="lbl" id="lbl">Stream starting soon...</div>
+    </div>
+    <div class="added" id="added">+30s</div>
+</div>
+<script src="/widgets/sf-bridge.js"></script>
+<script>
+(function(){
+'use strict';
+var digitsEl=document.getElementById('digits');
+var lblEl=document.getElementById('lbl');
+var addedEl=document.getElementById('added');
+var total=300,seconds=300,running=true;
+
+function fmt(s){
+    if(s<=0) return '00:00';
+    var h=Math.floor(s/3600),m=Math.floor((s%3600)/60),sec=s%60;
+    if(h>0) return String(h).padStart(2,'0')+':'+String(m).padStart(2,'0')+':'+String(sec).padStart(2,'0');
+    return String(m).padStart(2,'0')+':'+String(sec).padStart(2,'0');
+}
+
+function render(){
+    digitsEl.textContent=fmt(seconds);
+    if(seconds<=30 && seconds>0) digitsEl.classList.add('warn');
+    else digitsEl.classList.remove('warn');
+    if(seconds<=0){lblEl.textContent="Time's up!";digitsEl.classList.add('warn');}
+}
+
+function showAdded(n){
+    addedEl.textContent=(n>0?'+':'')+n+'s';
+    addedEl.style.color=n>0?'#10b981':'#ef4444';
+    addedEl.classList.remove('show');
+    void addedEl.offsetWidth;
+    addedEl.classList.add('show');
+}
+
+setInterval(function(){
+    if(!running||seconds<=0) return;
+    seconds--;
+    render();
+},1000);
+render();
+
+SF.on('timerControl',function(d){
+    if(d.action==='start') running=true;
+    if(d.action==='pause') running=false;
+    if(d.action==='reset'){seconds=d.seconds||300;total=seconds;running=true;lblEl.textContent=d.label||'Stream starting soon...';render();}
+    if(d.action==='add'){var n=d.seconds||30;seconds+=n;if(seconds>36000)seconds=36000;showAdded(n);render();}
+    if(d.action==='remove'){var n2=d.seconds||30;seconds-=n2;if(seconds<0)seconds=0;showAdded(-n2);render();}
+});
+
+if(SF.preview){
+    setInterval(function(){
+        var n=Math.random()>0.5?30:-10;
+        seconds+=n;if(seconds<0)seconds=0;
+        showAdded(n);render();
+    },8000);
+}
+})();
+</script>
+</body>
+</html>

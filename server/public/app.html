@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>StreamFinity | TikTok LIVE Tools</title>
+    <meta name="description" content="StreamFinity is the ultimate streaming tool for TikTok LIVE. Sound Alerts, Overlays, Chatbot, Song Requests and more!">
+    <link rel="icon" type="image/png" href="/static/logo.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="/ui/styles.css">
+</head>
+<body>
+
+<!-- HEADER / TOP BAR -->
+<header id="topBar">
+    <div class="top-left">
+        <button class="hamburger" id="hamburgerBtn" aria-label="Toggle menu">
+            <i class="fa-solid fa-bars"></i>
+        </button>
+        <div class="logo" id="logoBtn">
+            <img src="/static/logo.png" alt="StreamFinity" id="logoImg">
+            <div class="logo-fallback hidden" id="logoFallback">SF</div>
+        </div>
+        <button class="connect-btn" id="connectBtn">
+            <i class="fa-solid fa-tower-broadcast"></i>
+            <span>Connect to TikTok LIVE</span>
+        </button>
+        <div class="connection-status" id="connectionStatus">
+            <span class="status-dot offline"></span>
+            <span class="status-label">Disconnected</span>
+        </div>
+    </div>
+    <div class="top-right">
+        <div class="profile-selector" id="sfProfileSelector"></div>
+        <div class="top-bar-item notification-bell" id="notifBell">
+            <i class="fa-regular fa-bell"></i>
+            <span class="notif-badge hidden">0</span>
+        </div>
+        <div class="top-bar-item help-btn" id="helpBtn">
+            <i class="fa-regular fa-circle-question"></i>
+        </div>
+        <div class="lang-selector" id="sfLangSelector">
+            <button class="lang-btn" id="sfLangBtn" title="Language"><span id="sfLangFlag"></span></button>
+            <div class="lang-dropdown hidden" id="sfLangDropdown"></div>
+        </div>
+        <a href="https://discord.gg/hkQJaUNhN" target="_blank" rel="noopener" class="discord-link">
+            <i class="fa-brands fa-discord"></i>
+            <span>Need help? <b>Join our Discord</b></span>
+        </a>
+    </div>
+</header>
+
+<!-- NOTIFICATION DROPDOWN -->
+<div class="dropdown-panel hidden" id="notifDropdown">
+    <div class="dropdown-header">
+        <h3>Inbox</h3>
+        <div class="dropdown-actions">
+            <button title="Mark all read"><i class="fa-solid fa-check"></i></button>
+            <button title="Settings" id="notifSettingsBtn"><i class="fa-regular fa-gear"></i></button>
+        </div>
+    </div>
+    <div class="dropdown-tabs">
+        <div class="dropdown-tab active" data-tab="all">All</div>
+        <div class="dropdown-tab" data-tab="features">Features</div>
+        <div class="dropdown-tab" data-tab="announcements">Announcements</div>
+    </div>
+    <div class="dropdown-body">
+        <div class="dropdown-empty">
+            <p>Hey, you don't have any new notifications!</p>
+        </div>
+    </div>
+</div>
+
+<!-- HELP DROPDOWN -->
+<div class="dropdown-panel help-dropdown hidden" id="helpDropdown">
+    <div class="dropdown-header"><h3>Blog, How-to's &amp; Support</h3></div>
+    <div class="dropdown-body dropdown-body-padded">
+        <p class="help-desc">Discover tips, insights, and the latest updates to help you get the most out of our tools.</p>
+        <a href="#" class="btn-primary btn-blog"><span>Go to blog</span> <i class="fa-regular fa-chevron-right"></i></a>
+        <div class="accordion">
+            <div class="accordion-item open">
+                <div class="accordion-title"><span>How do I set up Actions &amp; Events?</span><i class="fa-regular fa-minus"></i></div>
+                <div class="accordion-body"><p>Learn how to create custom actions triggered by gifts, follows, and more.</p><a href="#" class="btn-secondary">Watch on YouTube</a></div>
+            </div>
+            <div class="accordion-item">
+                <div class="accordion-title"><span>How to Setup Sound Alerts</span><i class="fa-regular fa-plus"></i></div>
+                <div class="accordion-body"><a href="#" class="btn-secondary">Watch on YouTube</a></div>
+            </div>
+            <div class="accordion-item">
+                <div class="accordion-title"><span>Text-To-Speech Setup</span><i class="fa-regular fa-plus"></i></div>
+                <div class="accordion-body"><a href="#" class="btn-secondary">Watch on YouTube</a></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="sidebar-overlay" id="sidebarOverlay"></div>
+<div class="app-layout">
+    <!-- SIDEBAR NAVIGATION -->
+    <nav class="sidebar" id="sidebar"></nav>
+
+    <!-- MAIN CONTENT AREA -->
+    <main class="main-content" id="mainContent">
+        <div class="page-loader" id="pageLoader">
+            <i class="fa-solid fa-spinner fa-spin"></i>
+        </div>
+    </main>
+</div>
+
+<!-- CONNECT MODAL -->
+<div class="modal-overlay hidden" id="connectModal">
+    <div class="modal-box">
+        <div class="modal-close" id="closeConnectModal"><i class="fa-solid fa-xmark"></i></div>
+        <div class="modal-icon"><i class="fa-solid fa-tower-broadcast"></i></div>
+        <h2>Connect to TikTok LIVE</h2>
+        <p>Enter your TikTok username to connect to your live stream.</p>
+        <div class="form-group">
+            <label>TikTok Username</label>
+            <div class="input-with-icon">
+                <i class="fa-solid fa-at"></i>
+                <input type="text" id="tiktokUsername" placeholder="your_username" autocomplete="off">
+            </div>
+        </div>
+        <button class="btn-primary btn-full" id="doConnectBtn"><i class="fa-solid fa-plug"></i> Connect</button>
+        <div class="connect-status" id="connectStatus"></div>
+    </div>
+</div>
+
+<!-- SEARCH MODAL -->
+<div class="modal-overlay hidden" id="searchModal">
+    <div class="modal-search-box">
+        <div class="search-input-wrap">
+            <i class="fa-solid fa-magnifying-glass"></i>
+            <input type="text" id="searchInput" placeholder="Search pages, overlays, settings...">
+            <kbd>ESC</kbd>
+        </div>
+        <div class="search-results" id="searchResults"></div>
+    </div>
+</div>
+
+<script src="/ui/i18n.js?v=20260210f"></script>
+<script src="/ui/app.js?v=20260210f"></script>
+</body>
+</html>

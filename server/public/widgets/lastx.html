@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>StreamFinity | Last X</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',system-ui,sans-serif;background:transparent;color:#fff;display:flex;align-items:center;justify-content:center;height:100vh}
+.lx{display:flex;align-items:center;gap:14px;padding:14px 24px;border-radius:14px;background:rgba(15,15,25,.8);-webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px);border:1px solid rgba(255,255,255,.08)}
+.lx-icon{width:40px;height:40px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
+.lx-body{min-width:0}
+.lx-label{font-size:11px;color:rgba(255,255,255,.4);font-weight:500;text-transform:uppercase;letter-spacing:.5px}
+.lx-name{font-size:18px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:200px}
+.lx.new .lx-name{animation:nameIn .5s cubic-bezier(.22,1,.36,1)}
+@keyframes nameIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+</style>
+</head>
+<body>
+<div class="lx" id="lx">
+    <div class="lx-icon" id="icon">👤</div>
+    <div class="lx-body"><div class="lx-label" id="label">Last Event</div><div class="lx-name" id="name">Waiting...</div></div>
+</div>
+<script src="/widgets/sf-bridge.js"></script>
+<script>
+(function(){
+'use strict';
+var params=new URLSearchParams(location.search);
+var x=params.get('x')||'follower';
+var cfg={
+    follower:{icon:'👤',color:'rgba(16,185,129,.15)',label:'Last Follower',event:'follow'},
+    gifter:{icon:'🎁',color:'rgba(239,68,68,.15)',label:'Last Gifter',event:'gift'},
+    subscriber:{icon:'⭐',color:'rgba(245,158,11,.15)',label:'Last Subscriber',event:'subscribe'},
+    sharer:{icon:'🔗',color:'rgba(59,130,246,.15)',label:'Last Sharer',event:'share'},
+    liker:{icon:'❤️',color:'rgba(236,72,153,.15)',label:'Last Liker',event:'like'},
+    chatter:{icon:'💬',color:'rgba(139,92,246,.15)',label:'Last Chatter',event:'chat'}
+};
+var c=cfg[x]||cfg.follower;
+document.getElementById('icon').textContent=c.icon;
+document.getElementById('icon').style.background=c.color;
+document.getElementById('label').textContent=c.label;
+
+function setName(n){
+    var el=document.getElementById('name');
+    var lx=document.getElementById('lx');
+    el.textContent='@'+n;
+    lx.classList.remove('new');void lx.offsetWidth;lx.classList.add('new');
+}
+
+SF.on(c.event,function(d){setName(d.uniqueId||'viewer');});
+
+if(SF.preview){
+    var users=['StreamFan','GiftKing','NewViewer','TikTokPro','ChatMaster'];
+    setName(users[0]);
+    setInterval(function(){setName(users[Math.floor(Math.random()*users.length)]);},5000);
+}
+})();
+</script>
+</body>
+</html>

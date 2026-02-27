@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>StreamFinity | Song Requests</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',system-ui,sans-serif;background:transparent;color:#fff;padding:12px}
+.now-playing{display:flex;align-items:center;gap:14px;padding:16px 18px;margin-bottom:10px;border-radius:14px;background:rgba(15,15,25,.82);-webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px);border:1px solid rgba(29,185,84,.2);position:relative;overflow:hidden}
+.np-glow{position:absolute;top:-30px;left:-30px;width:100px;height:100px;background:radial-gradient(circle,rgba(29,185,84,.15),transparent 70%);pointer-events:none}
+.np-icon{width:52px;height:52px;border-radius:12px;background:rgba(29,185,84,.15);border:1px solid rgba(29,185,84,.25);display:flex;align-items:center;justify-content:center;flex-shrink:0;position:relative}
+.np-icon svg{width:24px;height:24px;fill:#1DB954}
+.np-disc{position:absolute;inset:0;border-radius:inherit;border:2px solid rgba(29,185,84,.1);animation:discSpin 3s linear infinite}
+.np-info{flex:1;min-width:0;position:relative;z-index:1}
+.np-label{font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:#1DB954;font-weight:600;margin-bottom:3px}
+.np-title{font-size:15px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.np-artist{font-size:12px;color:rgba(255,255,255,.45);margin-top:1px}
+.np-bar{height:3px;background:rgba(255,255,255,.08);border-radius:2px;margin-top:10px;overflow:hidden}
+.np-fill{height:100%;background:linear-gradient(90deg,#1DB954,#1ed760);border-radius:2px;transition:width .5s linear;position:relative}
+.np-time{display:flex;justify-content:space-between;font-size:9px;color:rgba(255,255,255,.3);margin-top:3px}
+.queue-header{font-size:11px;font-weight:600;color:rgba(255,255,255,.3);text-transform:uppercase;letter-spacing:.08em;margin:12px 0 8px 4px}
+.qi{display:flex;align-items:center;gap:10px;padding:10px 14px;background:rgba(15,15,25,.65);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,.05);border-radius:10px;margin-bottom:4px;animation:qiIn .3s ease both}
+.qi-num{width:20px;text-align:center;font-size:12px;font-weight:700;color:rgba(255,255,255,.2)}
+.qi-info{flex:1;min-width:0}
+.qi-title{font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.qi-artist{font-size:11px;color:rgba(255,255,255,.35)}
+.qi-user{font-size:10px;color:#1DB954;font-weight:500;flex-shrink:0}
+@keyframes discSpin{from{transform:rotate(0)}to{transform:rotate(360deg)}}
+@keyframes qiIn{from{opacity:0;transform:translateX(10px)}to{opacity:1;transform:translateX(0)}}
+</style>
+</head>
+<body>
+<div class="now-playing">
+    <div class="np-glow"></div>
+    <div class="np-icon">
+        <div class="np-disc"></div>
+        <svg viewBox="0 0 24 24"><path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.419 1.56-.299.421-1.02.599-1.559.3z"/></svg>
+    </div>
+    <div class="np-info">
+        <div class="np-label">Now Playing</div>
+        <div class="np-title" id="npTitle">Blinding Lights</div>
+        <div class="np-artist" id="npArtist">The Weeknd</div>
+        <div class="np-bar"><div class="np-fill" id="npFill"></div></div>
+        <div class="np-time"><span id="npElapsed">1:24</span><span id="npDuration">3:20</span></div>
+    </div>
+</div>
+<div class="queue-header">Up Next (<span id="qCount">0</span>)</div>
+<div id="queue"></div>
+<script src="/widgets/sf-bridge.js"></script>
+<script>
+(function(){
+'use strict';
+var queue=[
+    {title:'Levitating',artist:'Dua Lipa',user:'@musicfan'},
+    {title:'Stay',artist:'The Kid LAROI & Justin Bieber',user:'@giftking'},
+    {title:'Heat Waves',artist:'Glass Animals',user:'@viewer42'},
+];
+var queueEl=document.getElementById('queue');
+function renderQueue(){
+    document.getElementById('qCount').textContent=queue.length;
+    queueEl.innerHTML=queue.map(function(s,i){
+        return '<div class="qi" style="animation-delay:'+i*0.06+'s"><div class="qi-num">'+(i+1)+'</div><div class="qi-info"><div class="qi-title">'+s.title+'</div><div class="qi-artist">'+s.artist+'</div></div><div class="qi-user">'+s.user+'</div></div>';
+    }).join('');
+}
+renderQueue();
+var progress=42;var totalSec=200;
+document.getElementById('npFill').style.width=progress+'%';
+function fmtTime(s){return Math.floor(s/60)+':'+('0'+Math.floor(s%60)).slice(-2);}
+setInterval(function(){
+    progress+=0.5;if(progress>100)progress=0;
+    document.getElementById('npFill').style.width=progress+'%';
+    var elapsed=Math.floor(progress/100*totalSec);
+    document.getElementById('npElapsed').textContent=fmtTime(elapsed);
+    document.getElementById('npDuration').textContent=fmtTime(totalSec);
+},500);
+
+SF.on('songRequest',function(d){
+    queue.push({title:d.title||'Unknown',artist:d.artist||'',user:d.uniqueId?'@'+d.uniqueId:'Viewer'});
+    renderQueue();
+});
+SF.on('songChange',function(d){
+    document.getElementById('npTitle').textContent=d.title||'Unknown';
+    document.getElementById('npArtist').textContent=d.artist||'';
+    progress=0;totalSec=d.duration||200;
+});
+})();
+</script>
+</body>
+</html>

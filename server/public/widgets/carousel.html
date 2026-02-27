@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>StreamFinity | Carousel</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',system-ui,sans-serif;background:transparent;display:flex;align-items:center;justify-content:center;height:100vh;overflow:hidden}
+.carousel{width:360px;position:relative}
+.slide{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;padding:28px 24px;border-radius:16px;background:rgba(15,15,25,.8);-webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px);border:1px solid rgba(255,255,255,.08);opacity:0;transform:translateY(12px) scale(.96);transition:opacity .5s cubic-bezier(.22,1,.36,1),transform .5s cubic-bezier(.22,1,.36,1);pointer-events:none}
+.slide.active{opacity:1;transform:translateY(0) scale(1);pointer-events:auto}
+.slide-icon{width:56px;height:56px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:28px;margin-bottom:14px;position:relative}
+.slide-icon::after{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(255,255,255,.12),transparent);border-radius:inherit}
+.slide-title{font-size:16px;font-weight:700;color:#fff;margin-bottom:6px}
+.slide-text{font-size:12px;color:rgba(255,255,255,.55);line-height:1.6;text-align:center}
+.dots{display:flex;justify-content:center;gap:8px;margin-top:120px}
+.dot{width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,.15);transition:all .4s ease;cursor:pointer}
+.dot.active{background:linear-gradient(135deg,#8b5cf6,#3b82f6);width:24px;border-radius:4px;box-shadow:0 0 8px rgba(139,92,246,.4)}
+.progress{position:absolute;bottom:0;left:0;height:2px;background:linear-gradient(90deg,#8b5cf6,#3b82f6);border-radius:0 0 16px 16px;transition:width linear}
+</style>
+</head>
+<body>
+<div class="carousel">
+    <div id="slides" style="position:relative;height:110px"></div>
+    <div class="dots" id="dots"></div>
+</div>
+<script src="/widgets/sf-bridge.js"></script>
+<script>
+(function(){
+'use strict';
+var params=new URLSearchParams(location.search);
+var slides=[];
+try{slides=JSON.parse(params.get('slides')||'[]');}catch(_){}
+if(!slides.length) slides=[
+    {icon:'📱',title:'Follow on TikTok',text:'@streamer — Daily live streams!',color:'rgba(239,68,68,.15)',border:'rgba(239,68,68,.25)'},
+    {icon:'💬',title:'Join Discord',text:'discord.gg/example — Chat with the community',color:'rgba(88,101,242,.15)',border:'rgba(88,101,242,.25)'},
+    {icon:'📸',title:'Instagram',text:'@streamer — Behind the scenes',color:'rgba(225,48,108,.15)',border:'rgba(225,48,108,.25)'},
+    {icon:'🎵',title:'Spotify Playlist',text:'Listen to our stream playlist',color:'rgba(29,185,84,.15)',border:'rgba(29,185,84,.25)'},
+    {icon:'📺',title:'YouTube',text:'@streamer — Subscribe for highlights',color:'rgba(255,0,0,.12)',border:'rgba(255,0,0,.2)'},
+];
+var interval=+(params.get('interval')||4000);
+var current=0;
+var slidesEl=document.getElementById('slides');
+var dotsEl=document.getElementById('dots');
+
+function render(){
+    if(!slidesEl.children.length){
+        slidesEl.innerHTML=slides.map(function(s,i){
+            var bg=s.color||'rgba(139,92,246,.1)';
+            var bd=s.border||'rgba(139,92,246,.2)';
+            return '<div class="slide'+(i===0?' active':'')+'" data-idx="'+i+'"><div class="slide-icon" style="background:'+bg+';border:1px solid '+bd+'">'+s.icon+'</div><div class="slide-title">'+s.title+'</div><div class="slide-text">'+s.text+'</div><div class="progress" id="prog'+i+'"></div></div>';
+        }).join('');
+        dotsEl.innerHTML=slides.map(function(_,i){return '<div class="dot'+(i===0?' active':'')+'" data-idx="'+i+'"></div>';}).join('');
+        dotsEl.querySelectorAll('.dot').forEach(function(d){d.addEventListener('click',function(){goTo(+d.dataset.idx);});});
+    } else {
+        for(var i=0;i<slides.length;i++){
+            var sl=slidesEl.children[i];
+            var dt=dotsEl.children[i];
+            if(i===current){sl.classList.add('active');dt.classList.add('active');}
+            else{sl.classList.remove('active');dt.classList.remove('active');}
+        }
+    }
+    animateProgress();
+}
+function animateProgress(){
+    var p=document.getElementById('prog'+current);
+    if(!p)return;
+    slides.forEach(function(_,i){var el=document.getElementById('prog'+i);if(el)el.style.width='0%';});
+    p.style.transition='none';p.style.width='0%';
+    requestAnimationFrame(function(){requestAnimationFrame(function(){p.style.transition='width '+interval+'ms linear';p.style.width='100%';});});
+}
+function goTo(idx){current=idx;render();clearInterval(timer);timer=setInterval(next,interval);}
+function next(){current=(current+1)%slides.length;render();}
+render();
+var timer=setInterval(next,interval);
+})();
+</script>
+</body>
+</html>

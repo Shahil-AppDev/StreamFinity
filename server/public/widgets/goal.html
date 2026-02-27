@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>StreamFinity | Goal</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',system-ui,sans-serif;background:transparent;color:#fff;display:flex;align-items:center;justify-content:center;height:100vh;padding:16px}
+.goal{width:100%;max-width:500px;padding:20px 28px;border-radius:16px;background:rgba(15,15,25,.8);-webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px);border:1px solid rgba(255,255,255,.08)}
+.goal-label{font-size:14px;font-weight:600;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center}
+.goal-label span{color:rgba(255,255,255,.5);font-size:12px;font-weight:500}
+.bar{width:100%;height:28px;border-radius:14px;background:rgba(255,255,255,.06);overflow:hidden;position:relative}
+.fill{height:100%;border-radius:14px;background:linear-gradient(90deg,#8b5cf6,#3b82f6);transition:width .6s cubic-bezier(.22,1,.36,1);position:relative;min-width:0;width:0}
+.fill::after{content:'';position:absolute;inset:0;background:linear-gradient(180deg,rgba(255,255,255,.15),transparent);border-radius:inherit}
+.bar-text{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;text-shadow:0 1px 4px rgba(0,0,0,.5);z-index:1}
+.goal-sub{font-size:11px;color:rgba(255,255,255,.35);margin-top:8px;text-align:center}
+.bump{animation:goalBump .4s ease}
+@keyframes goalBump{0%{transform:scale(1)}50%{transform:scale(1.02)}100%{transform:scale(1)}}
+</style>
+</head>
+<body>
+<div class="goal" id="goal">
+    <div class="goal-label"><span id="gLabel">Goal</span><span id="gPct">0%</span></div>
+    <div class="bar"><div class="fill" id="gFill"></div><div class="bar-text" id="gText">0 / 100</div></div>
+    <div class="goal-sub" id="gSub"></div>
+</div>
+<script src="/widgets/sf-bridge.js"></script>
+<script>
+(function(){
+'use strict';
+var params=new URLSearchParams(location.search);
+var goalId=params.get('goalId')||'';
+var metric=params.get('metric')||'likes';
+var target=parseInt(params.get('target'))||100;
+var current=0;
+var goalLabel=params.get('label')||'';
+var labels={likes:'Likes Goal',shares:'Shares Goal',follows:'Follows Goal',viewer:'Viewer Goal',coins:'Coins Goal',subs:'Subscriber Goal',gifts:'Gifts Goal',chat:'Chat Goal',joins:'Joins Goal',custom:'Custom Goal',custom1:'Custom Goal',custom2:'Custom Goal 2',custom3:'Custom Goal 3'};
+
+function render(){
+    var pct=target>0?Math.min(100,Math.round((current/target)*100)):0;
+    document.getElementById('gLabel').textContent=goalLabel||labels[metric]||'Goal';
+    document.getElementById('gPct').textContent=pct+'%';
+    document.getElementById('gFill').style.width=pct+'%';
+    document.getElementById('gText').textContent=current.toLocaleString()+' / '+target.toLocaleString();
+    document.getElementById('gSub').textContent=pct>=100?'🎉 Goal reached!':'';
+    document.getElementById('goal').classList.remove('bump');
+    void document.getElementById('goal').offsetWidth;
+    document.getElementById('goal').classList.add('bump');
+}
+
+// Server-backed goal updates (from RulesEngine)
+SF.on('goalUpdate',function(d){
+    if(goalId && d.goalId && d.goalId!==goalId) return;
+    if(!goalId && d.metric && d.metric!==metric) return;
+    if(d.current!==undefined) current=d.current;
+    if(d.target!==undefined) target=d.target;
+    if(d.label) goalLabel=d.label;
+    render();
+});
+
+// Fallback: client-side tracking for non-server goals
+if(!goalId){
+    SF.on('like',function(d){if(metric==='likes'){current+=(d.likeCount||1);render();}});
+    SF.on('share',function(){if(metric==='shares'){current++;render();}});
+    SF.on('follow',function(){if(metric==='follows'){current++;render();}});
+    SF.on('gift',function(d){if(metric==='coins'){current+=(d.diamondCount||1);render();}else if(metric==='gifts'){current+=(d.repeatCount||1);render();}});
+    SF.on('subscribe',function(){if(metric==='subs'){current++;render();}});
+    SF.on('chat',function(){if(metric==='chat'){current++;render();}});
+    SF.on('member',function(){if(metric==='joins'){current++;render();}});
+}
+
+render();
+if(SF.preview){setInterval(function(){current+=Math.ceil(Math.random()*5);if(current>target)current=0;render();},3000);}
+})();
+</script>
+</body>
+</html>

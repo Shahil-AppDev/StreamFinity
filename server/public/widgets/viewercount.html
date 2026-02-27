@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>StreamFinity | Viewer Count</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',system-ui,sans-serif;background:transparent;color:#fff;display:flex;align-items:center;justify-content:center;height:100vh}
+.w{text-align:center;padding:24px 48px;border-radius:18px;background:rgba(15,15,25,.8);-webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px);border:1px solid rgba(255,255,255,.08);position:relative;overflow:hidden}
+.w::before{content:'';position:absolute;top:-50%;left:-50%;width:200%;height:200%;background:conic-gradient(from 0deg,transparent,rgba(139,92,246,.08),transparent,rgba(59,130,246,.08),transparent);animation:bgSpin 8s linear infinite}
+.inner{position:relative;z-index:1}
+.eye{font-size:28px;margin-bottom:4px;filter:drop-shadow(0 2px 8px rgba(139,92,246,.4))}
+.num{font-size:52px;font-weight:800;font-variant-numeric:tabular-nums;background:linear-gradient(135deg,#fff,rgba(255,255,255,.8));-webkit-background-clip:text;-webkit-text-fill-color:transparent;line-height:1.1;transition:transform .2s}
+.num.bump{animation:numBump .3s ease}
+.lbl{font-size:13px;color:rgba(255,255,255,.5);margin-top:6px;display:flex;align-items:center;justify-content:center;gap:6px;font-weight:500;letter-spacing:.5px;text-transform:uppercase}
+.dot{width:8px;height:8px;border-radius:50%;background:#10b981;box-shadow:0 0 8px rgba(16,185,129,.6);animation:pulse 1.5s ease infinite}
+.trend{font-size:12px;margin-top:8px;font-weight:600;opacity:.7}
+.trend.up{color:#10b981}
+.trend.down{color:#ef4444}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.4;transform:scale(.85)}}
+@keyframes bgSpin{to{transform:rotate(360deg)}}
+@keyframes numBump{0%{transform:scale(1)}50%{transform:scale(1.08)}100%{transform:scale(1)}}
+</style>
+</head>
+<body>
+<div class="w">
+    <div class="inner">
+        <div class="eye">👁</div>
+        <div class="num" id="num">0</div>
+        <div class="lbl"><span class="dot"></span>viewers watching</div>
+        <div class="trend" id="trend"></div>
+    </div>
+</div>
+<script src="/widgets/sf-bridge.js"></script>
+<script>
+(function(){
+'use strict';
+var numEl=document.getElementById('num');
+var trendEl=document.getElementById('trend');
+var current=0,prev=0;
+
+function animateCount(from,to){
+    var dur=400,start=performance.now();
+    function step(ts){
+        var p=Math.min((ts-start)/dur,1);
+        var v=Math.round(from+(to-from)*p);
+        numEl.textContent=v.toLocaleString();
+        if(p<1) requestAnimationFrame(step);
+    }
+    requestAnimationFrame(step);
+    numEl.classList.remove('bump');
+    void numEl.offsetWidth;
+    numEl.classList.add('bump');
+}
+
+function update(n){
+    if(n<0) n=0;
+    prev=current;
+    current=n;
+    animateCount(prev,current);
+    var diff=current-prev;
+    if(diff>0){trendEl.textContent='▲ +'+diff;trendEl.className='trend up';}
+    else if(diff<0){trendEl.textContent='▼ '+diff;trendEl.className='trend down';}
+    else{trendEl.textContent='';trendEl.className='trend';}
+}
+
+SF.on('roomUser',function(d){
+    if(d.viewerCount!==undefined) update(d.viewerCount);
+});
+
+if(SF.preview){
+    update(247);
+    setInterval(function(){update(current+Math.floor(Math.random()*20)-8);},4000);
+}
+})();
+</script>
+</body>
+</html>

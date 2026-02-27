@@ -1,0 +1,83 @@
+# ═══════════════════════════════════════════
+# StreamFinity — .gitignore
+# ═══════════════════════════════════════════
+
+# Dependencies
+node_modules/
+package-lock.json
+
+# Build output
+dist/
+build/
+out/
+*.nupkg
+
+# Binaries
+*.exe
+*.dll
+*.pak
+*.dat
+*.bin
+
+# Electron / Chromium runtime data
+DIPS
+DIPS-wal
+Local State
+Preferences
+SharedStorage
+SharedStorage-wal
+.updaterId
+Local Storage/
+Network/
+Partitions/
+Session Storage/
+Shared Dictionary/
+
+# Vendor (Electron source builds, ~250MB)
+vendor/
+
+# Installer packages (~123MB nupkg)
+packages/
+
+# Empty/legacy dirs
+streamcontrol/
+assets/
+
+# Large assets (gift catalog PNGs, ~500MB)
+server/public/static/gifts/
+
+# Logs & caches
+logs/
+server/logs/
+server/.cache/
+server/data/
+data/
+*.log
+
+# Environment
+.env
+server/.env
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Prompt/internal docs (not needed in repo)
+ASSET-EXTRACTION-QUICK-PROMPT.md
+CLOUD-OFFICE-3.6-INTEGRATION-PROMPT.md
+CROWDCONTROL-GAMES-API.md
+CROWDCONTROL-INTEGRATION-SYSTEM.md
+CROWDCONTROL-QUICK-INTEGRATION.md
+PROJECT_TREE.md
+QUICK-DEPLOY-77.42.34.90.md
+SERVER-DEPLOYMENT-PROMPT.md
+TECHNICAL-IMPLEMENTATION-PROMPT.md
+TIKFINITY_SITEMAP.md
+USER-ACCOUNT-SYSTEM.md

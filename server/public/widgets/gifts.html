@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>StreamFinity | Gifts</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',system-ui,sans-serif;background:transparent;overflow:hidden;display:flex;align-items:center;justify-content:center;height:100vh}
+.alert{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%) scale(0);opacity:0;text-align:center;padding:32px 48px;border-radius:20px;background:rgba(15,15,25,.85);-webkit-backdrop-filter:blur(20px);backdrop-filter:blur(20px);border:1px solid rgba(255,255,255,.08);transition:none;pointer-events:none;min-width:280px}
+.alert.show{animation:alertIn .6s cubic-bezier(.34,1.56,.64,1) forwards}
+.alert.hide{animation:alertOut .4s ease forwards}
+.alert-glow{position:absolute;inset:-2px;border-radius:22px;background:conic-gradient(from 0deg,#8b5cf6,#3b82f6,#10b981,#f59e0b,#ef4444,#ec4899,#8b5cf6);opacity:.4;filter:blur(16px);z-index:-1;animation:glowSpin 3s linear infinite}
+.alert-icon{font-size:56px;margin-bottom:8px;filter:drop-shadow(0 4px 12px rgba(0,0,0,.4));animation:iconFloat 2s ease-in-out infinite}
+.alert-gift{font-size:22px;font-weight:800;color:#fff;text-shadow:0 2px 12px rgba(0,0,0,.5);letter-spacing:-.5px}
+.alert-user{font-size:14px;color:rgba(255,255,255,.65);margin-top:6px;font-weight:500}
+.alert-coins{display:inline-flex;align-items:center;gap:6px;margin-top:10px;padding:4px 14px;border-radius:20px;background:linear-gradient(135deg,rgba(245,158,11,.2),rgba(234,179,8,.1));border:1px solid rgba(245,158,11,.3);font-size:14px;font-weight:700;color:#fbbf24}
+.alert-coins svg{width:16px;height:16px;fill:#fbbf24}
+@keyframes alertIn{0%{transform:translate(-50%,-50%) scale(0);opacity:0}100%{transform:translate(-50%,-50%) scale(1);opacity:1}}
+@keyframes alertOut{0%{transform:translate(-50%,-50%) scale(1);opacity:1}100%{transform:translate(-50%,-50%) scale(.8) translateY(-20px);opacity:0}}
+@keyframes iconFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+@keyframes glowSpin{to{transform:rotate(360deg)}}
+.particles{position:absolute;inset:0;pointer-events:none;overflow:hidden}
+.particle{position:absolute;width:6px;height:6px;border-radius:50%;animation:particleFly 1.5s ease-out forwards;opacity:0}
+@keyframes particleFly{0%{opacity:1;transform:translate(0,0) scale(1)}100%{opacity:0;transform:translate(var(--tx),var(--ty)) scale(0)}}
+</style>
+</head>
+<body>
+<div class="alert" id="alert">
+    <div class="alert-glow"></div>
+    <div class="particles" id="particles"></div>
+    <div class="alert-icon" id="aIcon">🎁</div>
+    <div class="alert-gift" id="aGift"></div>
+    <div class="alert-user" id="aUser"></div>
+    <div class="alert-coins" id="aCoins"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="none" stroke="#fbbf24" stroke-width="2"/><text x="12" y="16" text-anchor="middle" font-size="12" font-weight="bold" fill="#fbbf24">$</text></svg><span id="aCoinVal"></span></div>
+</div>
+<script src="/widgets/sf-bridge.js"></script>
+<script>
+(function(){
+'use strict';
+var el=document.getElementById('alert');
+var icons={'Rose':'🌹','Drama Queen':'👑','Lion':'🦁','GG':'🎮','Universe':'🌌','Interstellar':'🚀','TikTok':'🎵','Ice Cream Cone':'🍦','Finger Heart':'🫰','Sticker':'⭐','Heart Me':'💕','Doughnut':'🍩','Cap':'🧢','Confetti':'🎊','Butterfly':'🦋','Paper Crane':'🦢'};
+var colors=['#8b5cf6','#3b82f6','#10b981','#f59e0b','#ef4444','#ec4899'];
+var queue=[],showing=false;
+
+function spawnParticles(){
+    var cont=document.getElementById('particles');
+    cont.innerHTML='';
+    for(var i=0;i<16;i++){
+        var p=document.createElement('div');
+        p.className='particle';
+        var angle=Math.random()*Math.PI*2;
+        var dist=60+Math.random()*80;
+        p.style.cssText='left:50%;top:50%;background:'+colors[i%colors.length]+';--tx:'+Math.cos(angle)*dist+'px;--ty:'+Math.sin(angle)*dist+'px;animation-delay:'+Math.random()*0.3+'s';
+        cont.appendChild(p);
+    }
+}
+
+function show(d){
+    queue.push(d);
+    if(!showing) next();
+}
+function next(){
+    if(!queue.length){showing=false;return;}
+    showing=true;
+    var d=queue.shift();
+    document.getElementById('aIcon').textContent=icons[d.gift]||'🎁';
+    document.getElementById('aGift').textContent=(d.gift||'Gift')+' x '+(d.count||1);
+    document.getElementById('aUser').textContent='from @'+(d.user||'viewer');
+    document.getElementById('aCoinVal').textContent=(d.coins||1).toLocaleString()+' coins';
+    el.className='alert show';
+    spawnParticles();
+    setTimeout(function(){
+        el.className='alert hide';
+        setTimeout(next,500);
+    },4500);
+}
+
+SF.on('gift',function(d){
+    show({user:d.uniqueId,gift:d.giftName,count:d.repeatCount||1,coins:d.diamondCount||1});
+});
+
+if(SF.preview){
+    var gifts=[{g:'Rose',c:1},{g:'Drama Queen',c:500},{g:'Lion',c:29999},{g:'GG',c:1},{g:'Interstellar',c:10000},{g:'Finger Heart',c:5},{g:'Doughnut',c:30}];
+    var users=['GiftKing','BigFan','Supporter','NewViewer','LoyalFan'];
+    var i=0;
+    function demo(){show({user:users[i%users.length],gift:gifts[i%gifts.length].g,count:Math.ceil(Math.random()*5),coins:gifts[i%gifts.length].c});i++;setTimeout(demo,6000);}
+    setTimeout(demo,1500);
+}
+})();
+</script>
+</body>
+</html>

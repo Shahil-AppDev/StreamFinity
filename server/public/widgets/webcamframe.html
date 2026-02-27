@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Webcam Frame</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:transparent;overflow:hidden;width:100vw;height:100vh}
+.frame-container{position:relative;width:100%;height:100%;display:flex;align-items:center;justify-content:center}
+.frame-layer{position:absolute;inset:0;pointer-events:none}
+/* Frame styles */
+.frame-border{border-style:solid;border-radius:var(--radius,0);border-width:var(--bw,6px);border-color:var(--color,#8b5cf6);transition:all .4s ease}
+.frame-glow{box-shadow:0 0 var(--glow,20px) var(--color,#8b5cf6),inset 0 0 var(--glow,20px) rgba(139,92,246,.15);border:2px solid var(--color,#8b5cf6);border-radius:var(--radius,0)}
+.frame-gradient{border:var(--bw,6px) solid transparent;border-image:linear-gradient(var(--angle,135deg),var(--color,#8b5cf6),var(--color2,#ec4899)) 1;border-radius:0}
+.frame-animated{border:var(--bw,6px) solid var(--color,#8b5cf6);border-radius:var(--radius,0);animation:framePulse 2s ease-in-out infinite}
+.frame-corners{border:none;position:relative}
+.frame-corners::before,.frame-corners::after{content:'';position:absolute;width:40px;height:40px;border-color:var(--color,#8b5cf6);border-style:solid}
+.frame-corners::before{top:0;left:0;border-width:4px 0 0 4px;border-radius:var(--radius,0) 0 0 0}
+.frame-corners::after{top:0;right:0;border-width:4px 4px 0 0;border-radius:0 var(--radius,0) 0 0}
+.frame-corners .corner-bl,.frame-corners .corner-br{position:absolute;width:40px;height:40px;border-color:var(--color,#8b5cf6);border-style:solid}
+.frame-corners .corner-bl{bottom:0;left:0;border-width:0 0 4px 4px;border-radius:0 0 0 var(--radius,0)}
+.frame-corners .corner-br{bottom:0;right:0;border-width:0 4px 4px 0;border-radius:0 0 var(--radius,0) 0}
+.frame-image{border:none;background-size:100% 100%;background-repeat:no-repeat;background-position:center}
+.frame-double{border:var(--bw,4px) double var(--color,#8b5cf6);border-radius:var(--radius,0)}
+.frame-dashed{border:var(--bw,4px) dashed var(--color,#8b5cf6);border-radius:var(--radius,0);animation:frameDash 8s linear infinite}
+.frame-neon{border:2px solid var(--color,#8b5cf6);border-radius:var(--radius,0);box-shadow:0 0 5px var(--color,#8b5cf6),0 0 10px var(--color,#8b5cf6),0 0 20px var(--color,#8b5cf6),0 0 40px var(--color,#8b5cf6);animation:neonFlicker 3s ease-in-out infinite}
+@keyframes framePulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.7;transform:scale(1.005)}}
+@keyframes frameDash{to{stroke-dashoffset:-100}}
+@keyframes neonFlicker{0%,19%,21%,23%,25%,54%,56%,100%{box-shadow:0 0 5px var(--color),0 0 10px var(--color),0 0 20px var(--color),0 0 40px var(--color)}20%,24%,55%{box-shadow:none}}
+.label{position:absolute;bottom:8px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.7);color:#fff;padding:4px 12px;border-radius:20px;font:600 12px/1 'Segoe UI',sans-serif;white-space:nowrap;-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);display:none}
+.label.show{display:block}
+</style></head><body>
+<div class="frame-container">
+    <div class="frame-layer" id="frame"></div>
+    <div class="label" id="label"></div>
+</div>
+<script src="/widgets/sf-bridge.js"></script>
+<script>
+(function(){
+'use strict';
+var params=new URLSearchParams(location.search);
+var style=params.get('style')||'border';
+var color=params.get('color')||'#8b5cf6';
+var color2=params.get('color2')||'#ec4899';
+var radius=params.get('radius')||'0';
+var bw=params.get('bw')||'6';
+var glow=params.get('glow')||'20';
+var angle=params.get('angle')||'135';
+var label=params.get('label')||'';
+var imageUrl=params.get('imageUrl')||'';
+
+var el=document.getElementById('frame');
+var labelEl=document.getElementById('label');
+
+function applyStyle(){
+    el.style.setProperty('--color',color);
+    el.style.setProperty('--color2',color2);
+    el.style.setProperty('--radius',radius+'px');
+    el.style.setProperty('--bw',bw+'px');
+    el.style.setProperty('--glow',glow+'px');
+    el.style.setProperty('--angle',angle+'deg');
+    el.className='frame-layer frame-'+style;
+    el.innerHTML='';
+    if(style==='corners'){
+        el.innerHTML='<div class="corner-bl"></div><div class="corner-br"></div>';
+    }
+    if(style==='image'&&imageUrl){
+        el.style.backgroundImage='url('+imageUrl+')';
+    }
+    if(label){labelEl.textContent=label;labelEl.classList.add('show');}
+    else{labelEl.classList.remove('show');}
+}
+
+applyStyle();
+
+SF.on('webcamFrame',function(d){
+    if(d.style) style=d.style;
+    if(d.color) color=d.color;
+    if(d.color2) color2=d.color2;
+    if(d.radius!==undefined) radius=d.radius;
+    if(d.bw!==undefined) bw=d.bw;
+    if(d.glow!==undefined) glow=d.glow;
+    if(d.angle!==undefined) angle=d.angle;
+    if(d.label!==undefined) label=d.label;
+    if(d.imageUrl!==undefined) imageUrl=d.imageUrl;
+    applyStyle();
+});
+
+if(SF.preview){
+    var styles=['border','glow','gradient','animated','corners','double','dashed','neon'];
+    var idx=0;
+    setInterval(function(){
+        idx=(idx+1)%styles.length;
+        style=styles[idx];
+        applyStyle();
+    },3000);
+}
+})();
+</script>
+</body></html>

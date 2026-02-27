@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>StreamFinity | Stream Buddies</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',system-ui,sans-serif;background:transparent;overflow:hidden;height:100vh;width:100vw;position:relative}
+.buddy{position:absolute;bottom:8px;display:flex;flex-direction:column;align-items:center;animation:walkIn .6s cubic-bezier(.22,1,.36,1);transition:left 2s ease}
+.buddy-avatar{width:48px;height:48px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:22px;border:2px solid rgba(255,255,255,.15);box-shadow:0 4px 12px rgba(0,0,0,.3);position:relative;overflow:hidden}
+.buddy-avatar::after{content:'';position:absolute;inset:0;background:linear-gradient(180deg,rgba(255,255,255,.12),transparent 50%);border-radius:inherit}
+.buddy-name{font-size:9px;color:#fff;font-weight:600;background:rgba(15,15,25,.8);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);padding:3px 8px;border-radius:10px;margin-top:4px;white-space:nowrap;max-width:80px;overflow:hidden;text-overflow:ellipsis;border:1px solid rgba(255,255,255,.06)}
+.buddy-msg{position:absolute;bottom:72px;background:rgba(15,15,25,.85);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);color:#fff;padding:6px 12px;border-radius:12px 12px 12px 4px;font-size:11px;white-space:nowrap;max-width:160px;overflow:hidden;text-overflow:ellipsis;border:1px solid rgba(255,255,255,.08);opacity:0;transform:translateY(4px) scale(.9);transition:opacity .3s,transform .3s;box-shadow:0 4px 16px rgba(0,0,0,.3)}
+.buddy-msg.show{opacity:1;transform:translateY(0) scale(1)}
+.buddy-msg::after{content:'';position:absolute;bottom:-5px;left:12px;width:0;height:0;border-left:6px solid transparent;border-right:6px solid transparent;border-top:6px solid rgba(15,15,25,.85)}
+.buddy-pfp{width:100%;height:100%;border-radius:50%;object-fit:cover}
+@keyframes walkIn{from{transform:translateY(40px);opacity:0}to{transform:translateY(0);opacity:1}}
+@keyframes idle{0%,100%{transform:translateY(0)}50%{transform:translateY(-3px)}}
+@keyframes wave{0%,100%{transform:rotate(0)}25%{transform:rotate(15deg)}75%{transform:rotate(-15deg)}}
+</style>
+</head>
+<body>
+<script src="/widgets/sf-bridge.js"></script>
+<script>
+(function(){
+'use strict';
+var buddies=[];
+var MAX=20;
+var gradients=[
+    'linear-gradient(135deg,#8b5cf6,#6366f1)','linear-gradient(135deg,#ec4899,#f43f5e)',
+    'linear-gradient(135deg,#3b82f6,#06b6d4)','linear-gradient(135deg,#10b981,#34d399)',
+    'linear-gradient(135deg,#f59e0b,#f97316)','linear-gradient(135deg,#8b5cf6,#a855f7)',
+    'linear-gradient(135deg,#ef4444,#f97316)','linear-gradient(135deg,#14b8a6,#06b6d4)',
+];
+var faces=['😊','😎','🤩','🥳','😄','🔥','💪','🎮','🎵','👑','🦊','🐱','🐻','🦁','🐸','🐼','🦄','🐶'];
+
+function addBuddy(name,pfpUrl){
+    if(buddies.length>=MAX)return;
+    if(buddies.find(function(b){return b.name===name;}))return;
+    var el=document.createElement('div');
+    el.className='buddy';
+    var grad=gradients[Math.floor(Math.random()*gradients.length)];
+    var face=faces[Math.floor(Math.random()*faces.length)];
+    var x=5+Math.random()*85;
+    el.style.left=x+'%';
+    var avatarContent=pfpUrl?'<img class="buddy-pfp" src="'+pfpUrl+'" onerror="this.style.display=\'none\';this.parentNode.textContent=\''+face+'\'">':face;
+    el.innerHTML='<div class="buddy-msg" data-name="'+name+'"></div><div class="buddy-avatar" style="background:'+grad+'">'+avatarContent+'</div><div class="buddy-name">'+name+'</div>';
+    el.style.animation='idle '+(1.8+Math.random()*0.8)+'s ease infinite';
+    el.style.animationDelay=Math.random()*2+'s';
+    document.body.appendChild(el);
+    buddies.push({name:name,el:el,x:x});
+    // Gentle random movement
+    setInterval(function(){
+        var nx=Math.max(3,Math.min(92,x+(Math.random()-0.5)*10));
+        x=nx;el.style.left=nx+'%';
+    },4000+Math.random()*3000);
+}
+function showMsg(name,text){
+    var msg=document.querySelector('.buddy-msg[data-name="'+name+'"]');
+    if(!msg)return;
+    msg.textContent=text;msg.className='buddy-msg show';
+    clearTimeout(msg._t);
+    msg._t=setTimeout(function(){msg.className='buddy-msg';},4000);
+}
+
+SF.on('chat',function(d){
+    var u=d.uniqueId;if(!u)return;
+    addBuddy(u,d.profilePictureUrl);
+    showMsg(u,d.comment||'...');
+});
+SF.on('gift',function(d){
+    var u=d.uniqueId;if(!u)return;
+    addBuddy(u,d.profilePictureUrl);
+    showMsg(u,'🎁 '+(d.giftName||'Gift')+' x'+(d.repeatCount||1));
+});
+SF.on('follow',function(d){
+    var u=d.uniqueId;if(!u)return;
+    addBuddy(u,d.profilePictureUrl);
+    showMsg(u,'💜 Followed!');
+});
+SF.on('share',function(d){
+    var u=d.uniqueId;if(!u)return;
+    addBuddy(u,d.profilePictureUrl);
+    showMsg(u,'🔗 Shared!');
+});
+
+if(SF.preview){
+    var demoNames=['StreamFan','GiftKing','NewViewer','TikTokPro','ChatMaster','MusicLover','BigSpender'];
+    demoNames.forEach(function(n,i){setTimeout(function(){addBuddy(n);},i*600);});
+    setTimeout(function(){showMsg('StreamFan','Hello everyone! 👋');},2500);
+    setTimeout(function(){showMsg('GiftKing','🎁 Rose x5');},4000);
+    setTimeout(function(){showMsg('NewViewer','First time here!');},5500);
+    setTimeout(function(){showMsg('TikTokPro','Love the stream! 🔥');},7000);
+}
+})();
+</script>
+</body>
+</html>

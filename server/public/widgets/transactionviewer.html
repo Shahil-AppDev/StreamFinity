@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>StreamFinity | Transaction Viewer</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',system-ui,sans-serif;background:transparent;color:#fff;padding:10px;overflow-y:auto;height:100vh}
+.header{display:flex;align-items:center;gap:10px;padding:12px 16px;margin-bottom:10px;border-radius:12px;background:rgba(15,15,25,.82);-webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px);border:1px solid rgba(255,255,255,.08)}
+.header-icon{width:32px;height:32px;border-radius:8px;background:rgba(245,200,66,.12);border:1px solid rgba(245,200,66,.2);display:flex;align-items:center;justify-content:center;font-size:14px}
+.header-text{font-size:13px;font-weight:700;flex:1}
+.header-total{font-size:12px;font-weight:700;color:#f5c842}
+.tx{display:flex;align-items:center;gap:12px;padding:10px 14px;margin-bottom:4px;background:rgba(15,15,25,.7);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,.05);border-radius:10px;animation:txIn .35s cubic-bezier(.22,1,.36,1) both}
+.tx.big{border-color:rgba(245,200,66,.15);box-shadow:0 0 20px rgba(245,200,66,.05)}
+.tx-img{width:36px;height:36px;border-radius:10px;object-fit:contain;flex-shrink:0;background:rgba(255,255,255,.04);padding:3px}
+.tx-emoji{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;background:rgba(139,92,246,.1);border:1px solid rgba(139,92,246,.15)}
+.tx-info{flex:1;min-width:0}
+.tx-user{font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tx-gift{font-size:11px;color:rgba(255,255,255,.4);margin-top:1px}
+.tx-value{text-align:right;flex-shrink:0}
+.tx-diamonds{font-size:12px;font-weight:700;color:#f5c842}
+.tx-time{font-size:9px;color:rgba(255,255,255,.25);margin-top:2px}
+.tx-empty{text-align:center;padding:40px 20px;color:rgba(255,255,255,.2);font-size:12px}
+@keyframes txIn{from{opacity:0;transform:translateX(16px)}to{opacity:1;transform:translateX(0)}}
+</style>
+</head>
+<body>
+<div class="header">
+    <div class="header-icon">💎</div>
+    <div class="header-text">Transactions</div>
+    <div class="header-total" id="total">0 💎</div>
+</div>
+<div id="list"><div class="tx-empty">Waiting for gifts...</div></div>
+<script src="/widgets/sf-bridge.js"></script>
+<script>
+(function(){
+'use strict';
+var list=document.getElementById('list');
+var txns=[];var totalDiamonds=0;
+
+function addTx(data){
+    txns.unshift(data);if(txns.length>50)txns.pop();
+    totalDiamonds+=data.diamonds||0;
+    document.getElementById('total').textContent=totalDiamonds.toLocaleString()+' 💎';
+    render();
+}
+function render(){
+    list.innerHTML=txns.map(function(t,i){
+        var isBig=(t.diamonds||0)>=100;
+        var icon=t.imgUrl?'<img class="tx-img" src="'+t.imgUrl+'" alt="">':'<div class="tx-emoji">🎁</div>';
+        return '<div class="tx'+(isBig?' big':'')+'" style="animation-delay:'+i*0.03+'s">'+icon+'<div class="tx-info"><div class="tx-user">'+t.user+'</div><div class="tx-gift">'+t.gift+' x'+t.count+'</div></div><div class="tx-value"><div class="tx-diamonds">'+t.diamonds.toLocaleString()+' 💎</div><div class="tx-time">'+t.time+'</div></div></div>';
+    }).join('');
+}
+function now(){var d=new Date();return ('0'+d.getHours()).slice(-2)+':'+('0'+d.getMinutes()).slice(-2)+':'+('0'+d.getSeconds()).slice(-2);}
+
+SF.on('gift',function(d){
+    var diamonds=(d.diamondCount||1)*(d.repeatCount||1);
+    addTx({
+        user:d.uniqueId||d.nickname||'Viewer',
+        gift:d.giftName||'Gift',
+        count:d.repeatCount||1,
+        diamonds:diamonds,
+        imgUrl:d.giftPictureUrl||null,
+        time:now()
+    });
+});
+
+if(SF.preview){
+    var demoGifts=[
+        {user:'GiftKing',gift:'Drama Queen',count:1,diamonds:500,time:now()},
+        {user:'BigFan',gift:'Rose',count:5,diamonds:5,time:now()},
+        {user:'Supporter',gift:'Lion',count:1,diamonds:29999,time:now()},
+        {user:'NewViewer',gift:'GG',count:3,diamonds:3,time:now()},
+    ];
+    demoGifts.forEach(function(g,i){setTimeout(function(){addTx(g);},i*400);});
+}
+})();
+</script>
+</body>
+</html>

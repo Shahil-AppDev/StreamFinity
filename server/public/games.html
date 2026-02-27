@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title id="pageTitle">CrowdControl Games — StreamFinity</title>
+    <meta name="description" content="Play CrowdControl games on StreamFinity — Roulette, Trivia, Dice, Slots, Reaction Time and more!">
+    <meta property="og:title" content="CrowdControl Games — StreamFinity">
+    <meta property="og:description" content="Play interactive games, earn coins, climb the leaderboard!">
+    <meta property="og:url" content="https://tik.starline-agency.xyz/games">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        :root{--bg:#0f0f14;--bg-card:#1a1a24;--surface:#22222e;--border:#2a2a3a;--accent:#8b5cf6;--accent-bg:rgba(139,92,246,.12);--white:#f1f1f5;--text-dim:#a0a0b8;--text-muted:#6b6b80;--green:#10b981;--red:#ef4444;--yellow:#f59e0b;--blue:#3b82f6;--radius:10px}
+        *{margin:0;padding:0;box-sizing:border-box}
+        body{background:var(--bg);color:var(--white);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;min-height:100vh}
+        a{color:var(--accent);text-decoration:none}
+        .btn{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:6px;border:1px solid var(--border);background:var(--surface);color:var(--white);cursor:pointer;font-size:13px;font-weight:600;transition:all .15s}
+        .btn:hover{border-color:var(--accent);background:var(--accent-bg)}
+        .btn-primary{background:var(--accent);border-color:var(--accent);color:#fff}
+        .btn-primary:hover{opacity:.9}
+        .btn-sm{padding:5px 10px;font-size:12px}
+        .form-input{width:100%;padding:8px 12px;border-radius:6px;border:1px solid var(--border);background:var(--surface);color:var(--white);font-size:13px}
+        .form-input:focus{outline:none;border-color:var(--accent)}
+
+        /* Header */
+        .game-header{display:flex;align-items:center;justify-content:space-between;padding:16px 24px;background:var(--bg-card);border-bottom:1px solid var(--border)}
+        .game-header-left{display:flex;align-items:center;gap:12px}
+        .game-header h1{font-size:18px;font-weight:700}
+        .game-header .logo{font-size:24px}
+        .game-header-right{display:flex;align-items:center;gap:10px}
+        .user-balance{font-size:13px;color:var(--yellow);font-weight:600}
+
+        /* Hub */
+        .games-hub{max-width:1100px;margin:0 auto;padding:24px}
+        .hub-title{font-size:28px;font-weight:800;margin-bottom:6px}
+        .hub-subtitle{color:var(--text-muted);font-size:14px;margin-bottom:24px}
+        .hub-section{margin-bottom:28px}
+        .hub-section h2{font-size:16px;font-weight:700;margin-bottom:12px;display:flex;align-items:center;gap:8px}
+        .hub-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px}
+        .hub-card{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:16px;cursor:pointer;transition:all .15s;text-decoration:none;color:var(--white)}
+        .hub-card:hover{border-color:var(--accent);transform:translateY(-2px);box-shadow:0 4px 20px rgba(139,92,246,.15)}
+        .hub-card-icon{font-size:32px;margin-bottom:8px}
+        .hub-card-name{font-size:15px;font-weight:700;margin-bottom:4px}
+        .hub-card-desc{font-size:12px;color:var(--text-muted);line-height:1.4}
+        .hub-card-meta{display:flex;gap:10px;margin-top:8px;font-size:11px;color:var(--text-dim)}
+        .hub-card-meta span{display:flex;align-items:center;gap:3px}
+
+        /* Game Page */
+        .game-page{max-width:700px;margin:0 auto;padding:24px}
+        .game-container{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:24px;text-align:center}
+        .game-controls{margin-top:16px}
+        .bet-row{margin-bottom:12px}
+        .bet-row label{display:block;font-size:12px;font-weight:600;color:var(--text-muted);margin-bottom:4px}
+        .bet-btns{display:flex;gap:6px;justify-content:center;flex-wrap:wrap}
+        .bet-btn.active,.pred-btn.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+        .spin-btn{width:100%;max-width:300px;margin:12px auto 0;padding:12px;font-size:16px;font-weight:700}
+        .game-result{margin-top:12px;text-align:center}
+        .result-win{background:rgba(16,185,129,.12);border:1px solid rgba(16,185,129,.3);color:var(--green);padding:12px;border-radius:var(--radius);font-weight:600;font-size:14px}
+        .result-lose{background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);color:var(--red);padding:12px;border-radius:var(--radius);font-weight:600;font-size:14px}
+        .result-balance{font-size:12px;color:var(--text-muted);margin-top:6px}
+
+        /* Roulette */
+        .roulette-wheel{position:relative;width:260px;height:260px;margin:0 auto 16px}
+        .roulette-pointer{position:absolute;top:-10px;left:50%;transform:translateX(-50%);font-size:24px;color:var(--accent);z-index:2}
+        .roulette-disc{width:100%;height:100%;border-radius:50%;background:conic-gradient(#10b981 0deg 60deg,#3b82f6 60deg 120deg,#8b5cf6 120deg 180deg,#ef4444 180deg 240deg,#f59e0b 240deg 300deg,#06b6d4 300deg 360deg);border:4px solid var(--border)}
+
+        /* Dice */
+        .dice-display{display:flex;gap:16px;justify-content:center;margin-bottom:16px}
+        .dice-face{font-size:56px}
+
+        /* Slots */
+        .slots-display{display:flex;gap:12px;justify-content:center;margin-bottom:16px;padding:16px;background:var(--surface);border-radius:var(--radius)}
+        .slot-reel{font-size:48px;min-width:60px;text-align:center}
+        .slots-spinning .slot-reel{animation:slotSpin .15s infinite}
+        @keyframes slotSpin{0%{transform:translateY(-5px)}50%{transform:translateY(5px)}100%{transform:translateY(-5px)}}
+
+        /* Coin */
+        .coin-display{font-size:80px;margin:16px 0}
+        .coin-flipping{animation:coinFlip .6s ease infinite}
+        @keyframes coinFlip{0%{transform:rotateY(0)}50%{transform:rotateY(180deg)}100%{transform:rotateY(360deg)}}
+
+        /* Cards */
+        .cards-display{display:flex;gap:8px;justify-content:center;margin-bottom:16px;flex-wrap:wrap}
+        .card,.card-back{width:60px;height:85px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;border:2px solid var(--border);background:var(--surface);color:var(--white)}
+        .card-back{background:var(--accent-bg);color:var(--accent);font-size:28px}
+        .card-red{color:#ef4444}
+
+        /* Trivia */
+        .trivia-cats{display:flex;gap:6px;flex-wrap:wrap;justify-content:center;margin-bottom:16px}
+        .trivia-text{font-size:18px;font-weight:700;margin-bottom:6px}
+        .trivia-meta{font-size:12px;color:var(--text-muted)}
+        .trivia-options{display:grid;grid-template-columns:1fr 1fr;gap:8px;max-width:500px;margin:0 auto}
+        .trivia-opt{padding:12px;font-size:14px;font-weight:600;text-align:left;transition:all .15s}
+        .trivia-opt:hover:not(:disabled){background:var(--accent-bg);border-color:var(--accent)}
+        .opt-correct{background:rgba(16,185,129,.2)!important;border-color:var(--green)!important;color:var(--green)!important}
+        .opt-wrong{background:rgba(239,68,68,.15)!important;border-color:var(--red)!important;color:var(--red)!important}
+
+        /* Reaction */
+        .reaction-box{width:100%;height:200px;border-radius:var(--radius);display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:700;background:var(--surface);cursor:pointer;transition:background .2s;margin-bottom:16px;-webkit-user-select:none;user-select:none}
+        .reaction-wait{background:#ef4444;cursor:default}
+        .reaction-go{background:#10b981;cursor:pointer}
+
+        /* Word / Scramble */
+        .word-hint,.scramble-word{font-size:32px;font-weight:700;letter-spacing:6px;color:var(--accent);margin:16px 0;font-family:monospace}
+
+        /* Target */
+        .target{display:flex;align-items:center;justify-content:center;font-size:24px;cursor:pointer;border-radius:50%;transition:transform .1s;animation:targetPop .3s ease}
+        .target:hover{transform:scale(1.2)}
+        @keyframes targetPop{0%{transform:scale(0)}100%{transform:scale(1)}}
+
+        /* Footer */
+        .game-footer{text-align:center;padding:20px;color:var(--text-muted);font-size:12px;margin-top:40px;border-top:1px solid var(--border)}
+
+        @media(max-width:600px){
+            .hub-grid{grid-template-columns:1fr}
+            .trivia-options{grid-template-columns:1fr}
+            .game-header h1{font-size:14px}
+        }
+    </style>
+</head>
+<body>
+    <div class="game-header">
+        <div class="game-header-left">
+            <span class="logo">🎮</span>
+            <h1 id="headerTitle">CrowdControl Games</h1>
+        </div>
+        <div class="game-header-right">
+            <span class="user-balance" id="userBalance"></span>
+            <a href="/" class="btn btn-sm"><i class="fa-solid fa-home"></i> Dashboard</a>
+        </div>
+    </div>
+
+    <div id="app"></div>
+
+    <div class="game-footer">
+        <p>CrowdControl Games — <a href="https://tik.starline-agency.xyz">StreamFinity</a> &copy; 2026</p>
+        <p style="margin-top:4px"><a href="/games">All Games</a> · <a href="/">Dashboard</a></p>
+    </div>
+
+    <script>
+    const API = '/api/crowdcontrol';
+    const GAME_API = API + '/games';
+    let currentUser = null;
+    let currentToken = localStorage.getItem('cc_token') || null;
+
+    async function apiFetch(path, opts = {}) {
+        const headers = { 'Content-Type': 'application/json', ...(opts.headers || {}) };
+        if (currentToken) headers['Authorization'] = 'Bearer ' + currentToken;
+        const r = await fetch(path, { ...opts, headers });
+        return r.json();
+    }
+
+    async function loadUser() {
+        if (!currentToken) return;
+        try {
+            const data = await apiFetch('/api/auth/me');
+            if (data.user) {
+                currentUser = data.user;
+                document.getElementById('userBalance').textContent = `${currentUser.coins || 0} 🪙 | ${currentUser.gems || 0} 💎`;
+            }
+        } catch {}
+    }
+
+    function getUserId() {
+        return currentUser?.user_id || 'guest_' + Date.now();
+    }
+
+    // ── ROUTER ──
+    const gameSlug = window.__GAME_ID__ || null;
+
+    async function init() {
+        await loadUser();
+        if (gameSlug) {
+            renderGamePage(gameSlug);
+        } else {
+            renderHub();
+        }
+    }
+
+    // ── HUB ──
+    async function renderHub() {
+        const app = document.getElementById('app');
+        app.innerHTML = '<div class="games-hub"><div style="text-align:center;padding:40px;color:var(--text-muted)"><i class="fa-solid fa-spinner fa-spin"></i> Loading games...</div></div>';
+        try {
+            const data = await apiFetch(GAME_API);
+            const games = data.games || [];
+            const cats = data.categories || {};
+            const grouped = {};
+            games.forEach(g => { if (!grouped[g.category]) grouped[g.category] = []; grouped[g.category].push(g); });
+
+            let html = `<div class="games-hub">
+                <div class="hub-title">🎮 CrowdControl Games</div>
+                <div class="hub-subtitle">Play interactive games, earn coins & XP, climb the leaderboard!</div>`;
+
+            for (const [cat, catGames] of Object.entries(grouped)) {
+                const catInfo = cats[cat] || { label: cat, icon: '🎮' };
+                html += `<div class="hub-section">
+                    <h2>${catInfo.icon} ${catInfo.label}</h2>
+                    <div class="hub-grid">`;
+                for (const g of catGames) {
+                    const slug = gameIdToSlug(g.id);
+                    html += `<a href="/games/${slug}" class="hub-card">
+                        <div class="hub-card-icon">${g.icon}</div>
+                        <div class="hub-card-name">${g.name}</div>
+                        <div class="hub-card-desc">${g.description}</div>
+                        <div class="hub-card-meta">
+                            <span><i class="fa-solid fa-signal"></i> ${g.difficulty}</span>
+                            <span><i class="fa-solid fa-users"></i> ${g.players.min}-${g.players.max}</span>
+                            <span><i class="fa-solid fa-star"></i> ${g.xpReward} XP</span>
+                        </div>
+                    </a>`;
+                }
+                html += `</div></div>`;
+            }
+            html += `</div>`;
+            app.innerHTML = html;
+        } catch (err) {
+            app.innerHTML = `<div class="games-hub"><div class="result-lose" style="margin:40px">${err.message}</div></div>`;
+        }
+    }
+
+    function gameIdToSlug(id) {
+        const map = {roulette:'roulette',dice:'dice',slots:'slots',cardDraw:'card-draw',coinFlip:'coin-flip',trivia:'trivia',wordGuess:'word-guess',scramble:'scramble',musicQuiz:'music-quiz',movieTrivia:'movie-trivia',reactionTime:'reaction',targetClick:'target-click',raceGame:'race',clickBattle:'click-battle',battleRoyale:'battle-royale',teamChallenge:'team-challenge',tournament:'tournament',eventGames:'event-games'};
+        return map[id] || id;
+    }
+    function slugToGameId(slug) {
+        const map = {roulette:'roulette',dice:'dice',slots:'slots','card-draw':'cardDraw','coin-flip':'coinFlip',trivia:'trivia','word-guess':'wordGuess',scramble:'scramble','music-quiz':'musicQuiz','movie-trivia':'movieTrivia',reaction:'reactionTime','target-click':'targetClick',race:'raceGame','click-battle':'clickBattle','battle-royale':'battleRoyale','team-challenge':'teamChallenge',tournament:'tournament','event-games':'eventGames'};
+        return map[slug] || slug;
+    }
+
+    // ── GAME PAGE ──
+    async function renderGamePage(slug) {
+        const gid = slugToGameId(slug);
+        const app = document.getElementById('app');
+        app.innerHTML = '<div class="game-page"><div class="game-container" style="padding:40px;color:var(--text-muted)"><i class="fa-solid fa-spinner fa-spin"></i> Loading...</div></div>';
+
+        try {
+            const data = await apiFetch(GAME_API);
+            const game = (data.games || []).find(g => g.id === gid);
+            if (!game) { app.innerHTML = '<div class="game-page"><div class="result-lose">Game not found</div><p style="text-align:center;margin-top:12px"><a href="/games">← Back to Games</a></p></div>'; return; }
+
+            document.getElementById('pageTitle').textContent = `${game.icon} ${game.name} — CrowdControl`;
+            document.getElementById('headerTitle').textContent = `${game.icon} ${game.name}`;
+
+            const userId = getUserId();
+            app.innerHTML = `<div class="game-page">
+                <div style="margin-bottom:12px"><a href="/games" class="btn btn-sm"><i class="fa-solid fa-arrow-left"></i> All Games</a></div>
+                <div class="game-container" id="gameArea"></div>
+                <div class="game-result" id="gameResult"></div>
+            </div>`;
+
+            switch (gid) {
+                case 'roulette': buildRoulette(userId); break;
+                case 'dice': buildDice(userId); break;
+                case 'slots': buildSlots(userId); break;
+                case 'coinFlip': buildCoinFlip(userId); break;
+                case 'cardDraw': buildCardDraw(userId); break;
+                case 'trivia': buildTrivia(userId); break;
+                case 'reactionTime': buildReaction(userId); break;
+                case 'wordGuess': buildWordGuess(userId); break;
+                case 'scramble': buildScramble(userId); break;
+                case 'targetClick': buildTargetClick(userId); break;
+                default: buildGeneric(game); break;
+            }
+        } catch (err) {
+            app.innerHTML = `<div class="game-page"><div class="result-lose">${err.message}</div></div>`;
+        }
+    }
+
+    // ── ROULETTE ──
+    function buildRoulette(userId) {
+        const el = document.getElementById('gameArea');
+        el.innerHTML = `<div class="roulette-wheel"><div class="roulette-pointer">▼</div><div class="roulette-disc" id="disc"></div></div>
+            <div class="game-controls"><div class="bet-row"><label>Bet Amount</label><div class="bet-btns">
+                <button class="btn btn-sm bet-btn" data-bet="10">10</button><button class="btn btn-sm bet-btn active" data-bet="50">50</button>
+                <button class="btn btn-sm bet-btn" data-bet="100">100</button><button class="btn btn-sm bet-btn" data-bet="500">500</button>
+            </div></div><button class="btn btn-primary spin-btn" id="spinBtn"><i class="fa-solid fa-rotate"></i> SPIN!</button></div>`;
+        let bet = 50;
+        el.querySelectorAll('.bet-btn').forEach(b => b.addEventListener('click', () => { el.querySelectorAll('.bet-btn').forEach(x => x.classList.remove('active')); b.classList.add('active'); bet = +b.dataset.bet; }));
+        document.getElementById('spinBtn').addEventListener('click', async () => {
+            const btn = document.getElementById('spinBtn'); btn.disabled = true; btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Spinning...';
+            try {
+                const d = await apiFetch(GAME_API + '/roulette/spin', { method: 'POST', body: JSON.stringify({ userId, betAmount: bet }) });
+                const disc = document.getElementById('disc');
+                disc.style.transition = 'transform 3s cubic-bezier(0.17,0.67,0.12,0.99)';
+                disc.style.transform = `rotate(${d.result.spinAngle}deg)`;
+                setTimeout(() => {
+                    const r = d.result;
+                    document.getElementById('gameResult').innerHTML = r.won
+                        ? `<div class="result-win">🎉 Won <strong>${r.prize} coins</strong>! (${r.segment.label})</div>`
+                        : `<div class="result-lose">😢 ${r.segment.label}</div>`;
+                    if (r.newBalance !== undefined) document.getElementById('gameResult').innerHTML += `<div class="result-balance">Balance: ${r.newBalance} 🪙</div>`;
+                    btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-rotate"></i> SPIN!';
+                    disc.style.transition = 'none'; disc.style.transform = 'rotate(0deg)';
+                    loadUser();
+                }, 3200);
+            } catch (e) { document.getElementById('gameResult').innerHTML = `<div class="result-lose">${e.message}</div>`; btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-rotate"></i> SPIN!'; }
+        });
+    }
+
+    // ── DICE ──
+    function buildDice(userId) {
+        const el = document.getElementById('gameArea');
+        el.innerHTML = `<div class="dice-display" id="diceDisp"><span class="dice-face">🎲</span><span class="dice-face">🎲</span></div>
+            <div class="game-controls"><div class="bet-row"><label>Bet</label><div class="bet-btns">
+                <button class="btn btn-sm bet-btn" data-bet="10">10</button><button class="btn btn-sm bet-btn active" data-bet="25">25</button>
+                <button class="btn btn-sm bet-btn" data-bet="50">50</button><button class="btn btn-sm bet-btn" data-bet="100">100</button>
+            </div></div><div class="bet-row"><label>Prediction</label><div class="bet-btns">
+                <button class="btn btn-sm pred-btn active" data-pred="high">⬆ High</button><button class="btn btn-sm pred-btn" data-pred="low">⬇ Low</button>
+            </div></div><button class="btn btn-primary spin-btn" id="rollBtn"><i class="fa-solid fa-dice"></i> ROLL!</button></div>`;
+        let bet = 25, pred = 'high';
+        el.querySelectorAll('.bet-btn').forEach(b => b.addEventListener('click', () => { el.querySelectorAll('.bet-btn').forEach(x => x.classList.remove('active')); b.classList.add('active'); bet = +b.dataset.bet; }));
+        el.querySelectorAll('.pred-btn').forEach(b => b.addEventListener('click', () => { el.querySelectorAll('.pred-btn').forEach(x => x.classList.remove('active')); b.classList.add('active'); pred = b.dataset.pred; }));
+        document.getElementById('rollBtn').addEventListener('click', async () => {
+            const btn = document.getElementById('rollBtn'); btn.disabled = true;
+            try {
+                const d = await apiFetch(GAME_API + '/dice/roll', { method: 'POST', body: JSON.stringify({ userId, betAmount: bet, prediction: pred }) });
+                const r = d.result; const emoji = ['','⚀','⚁','⚂','⚃','⚄','⚅'];
+                document.getElementById('diceDisp').innerHTML = r.dice.map(v => `<span class="dice-face">${emoji[v]||v}</span>`).join('');
+                document.getElementById('gameResult').innerHTML = `<div class="result-${r.won?'win':'lose'}">${r.won?`🎉 ${r.total} (${r.result}) — Won ${r.prize} coins!`:`😢 ${r.total} (${r.result}) — Lost!`}</div>`;
+                loadUser();
+            } catch (e) { document.getElementById('gameResult').innerHTML = `<div class="result-lose">${e.message}</div>`; }
+            btn.disabled = false;
+        });
+    }
+
+    // ── SLOTS ──
+    function buildSlots(userId) {
+        const el = document.getElementById('gameArea');
+        el.innerHTML = `<div class="slots-display" id="slotsDisp"><span class="slot-reel">🍒</span><span class="slot-reel">🍋</span><span class="slot-reel">🍊</span></div>
+            <div class="game-controls"><div class="bet-row"><label>Bet</label><div class="bet-btns">
+                <button class="btn btn-sm bet-btn" data-bet="5">5</button><button class="btn btn-sm bet-btn active" data-bet="10">10</button>
+                <button class="btn btn-sm bet-btn" data-bet="25">25</button><button class="btn btn-sm bet-btn" data-bet="50">50</button>
+            </div></div><button class="btn btn-primary spin-btn" id="slotBtn"><i class="fa-solid fa-play"></i> SPIN!</button></div>`;
+        let bet = 10;
+        el.querySelectorAll('.bet-btn').forEach(b => b.addEventListener('click', () => { el.querySelectorAll('.bet-btn').forEach(x => x.classList.remove('active')); b.classList.add('active'); bet = +b.dataset.bet; }));
+        document.getElementById('slotBtn').addEventListener('click', async () => {
+            const btn = document.getElementById('slotBtn'); btn.disabled = true;
+            document.getElementById('slotsDisp').classList.add('slots-spinning');
+            try {
+                const d = await apiFetch(GAME_API + '/slots/spin', { method: 'POST', body: JSON.stringify({ userId, betAmount: bet }) });
+                setTimeout(() => {
+                    const r = d.result;
+                    document.getElementById('slotsDisp').classList.remove('slots-spinning');
+                    document.getElementById('slotsDisp').innerHTML = r.reels.map(s => `<span class="slot-reel">${s}</span>`).join('');
+                    document.getElementById('gameResult').innerHTML = r.won ? `<div class="result-win">🎰 ${r.bonus==='jackpot'?'JACKPOT! ':''}Won ${r.prize} coins!</div>` : `<div class="result-lose">No match — try again!</div>`;
+                    btn.disabled = false; loadUser();
+                }, 1500);
+            } catch (e) { document.getElementById('slotsDisp').classList.remove('slots-spinning'); document.getElementById('gameResult').innerHTML = `<div class="result-lose">${e.message}</div>`; btn.disabled = false; }
+        });
+    }
+
+    // ── COIN FLIP ──
+    function buildCoinFlip(userId) {
+        const el = document.getElementById('gameArea');
+        el.innerHTML = `<div class="coin-display" id="coinDisp">🪙</div>
+            <div class="game-controls"><div class="bet-row"><label>Bet</label><div class="bet-btns">
+                <button class="btn btn-sm bet-btn active" data-bet="10">10</button><button class="btn btn-sm bet-btn" data-bet="50">50</button><button class="btn btn-sm bet-btn" data-bet="100">100</button>
+            </div></div><div class="bet-row"><label>Your Call</label><div class="bet-btns">
+                <button class="btn btn-sm pred-btn active" data-pred="heads">👑 Heads</button><button class="btn btn-sm pred-btn" data-pred="tails">🦅 Tails</button>
+            </div></div><button class="btn btn-primary spin-btn" id="flipBtn"><i class="fa-solid fa-coins"></i> FLIP!</button></div>`;
+        let bet = 10, choice = 'heads';
+        el.querySelectorAll('.bet-btn').forEach(b => b.addEventListener('click', () => { el.querySelectorAll('.bet-btn').forEach(x => x.classList.remove('active')); b.classList.add('active'); bet = +b.dataset.bet; }));
+        el.querySelectorAll('.pred-btn').forEach(b => b.addEventListener('click', () => { el.querySelectorAll('.pred-btn').forEach(x => x.classList.remove('active')); b.classList.add('active'); choice = b.dataset.pred; }));
+        document.getElementById('flipBtn').addEventListener('click', async () => {
+            const btn = document.getElementById('flipBtn'); btn.disabled = true;
+            document.getElementById('coinDisp').classList.add('coin-flipping');
+            try {
+                const d = await apiFetch(GAME_API + '/coin-flip/flip', { method: 'POST', body: JSON.stringify({ userId, betAmount: bet, choice }) });
+                setTimeout(() => {
+                    const r = d.result;
+                    document.getElementById('coinDisp').classList.remove('coin-flipping');
+                    document.getElementById('coinDisp').textContent = r.result === 'heads' ? '👑' : '🦅';
+                    document.getElementById('gameResult').innerHTML = r.won ? `<div class="result-win">🎉 ${r.result.toUpperCase()}! Won ${r.prize} coins!</div>` : `<div class="result-lose">😢 ${r.result.toUpperCase()} — You picked ${r.choice}</div>`;
+                    btn.disabled = false; loadUser();
+                }, 1200);
+            } catch (e) { document.getElementById('coinDisp').classList.remove('coin-flipping'); document.getElementById('gameResult').innerHTML = `<div class="result-lose">${e.message}</div>`; btn.disabled = false; }
+        });
+    }
+
+    // ── CARD DRAW ──
+    function buildCardDraw(userId) {
+        const el = document.getElementById('gameArea');
+        el.innerHTML = `<div class="cards-display" id="cardsDisp"><div class="card-back">🂠</div><div class="card-back">🂠</div><div class="card-back">🂠</div><div class="card-back">🂠</div><div class="card-back">🂠</div></div>
+            <button class="btn btn-primary spin-btn" id="drawBtn"><i class="fa-solid fa-hand"></i> DRAW!</button>`;
+        document.getElementById('drawBtn').addEventListener('click', async () => {
+            const btn = document.getElementById('drawBtn'); btn.disabled = true;
+            try {
+                const d = await apiFetch(GAME_API + '/card-draw/draw', { method: 'POST', body: JSON.stringify({ userId }) });
+                const r = d.result;
+                document.getElementById('cardsDisp').innerHTML = r.hand.map(c => `<div class="card ${c.suit==='♥'||c.suit==='♦'?'card-red':''}">${c.rank}${c.suit}</div>`).join('');
+                const labels = {high_card:'High Card',pair:'Pair',two_pair:'Two Pair',three_of_a_kind:'Three of a Kind',full_house:'Full House',four_of_a_kind:'Four of a Kind'};
+                document.getElementById('gameResult').innerHTML = `<div class="result-${r.points>=100?'win':'lose'}">${labels[r.handRank]||r.handRank} — ${r.points>0?`Won ${r.points} coins!`:'No winning hand'}</div>`;
+            } catch (e) { document.getElementById('gameResult').innerHTML = `<div class="result-lose">${e.message}</div>`; }
+            btn.disabled = false;
+        });
+    }
+
+    // ── TRIVIA ──
+    function buildTrivia(userId) {
+        const el = document.getElementById('gameArea');
+        el.innerHTML = `<div class="trivia-cats" id="triviaCats"></div><div id="triviaQ"><p style="color:var(--text-muted)">Select a category to start!</p></div><div class="trivia-options" id="triviaOpts"></div>`;
+        (async () => {
+            const c = await apiFetch(GAME_API + '/trivia/categories');
+            document.getElementById('triviaCats').innerHTML = (c.categories||[]).map(cat => `<button class="btn btn-sm" onclick="loadQuestion('${userId}','${cat}')">${cat}</button>`).join('');
+        })();
+    }
+    async function loadQuestion(userId, cat) {
+        const d = await apiFetch(GAME_API + '/trivia/next-question', { method: 'POST', body: JSON.stringify({ category: cat }) });
+        const q = d.question;
+        document.getElementById('triviaQ').innerHTML = `<div class="trivia-text">${q.question}</div><div class="trivia-meta">${q.difficulty} — ${q.points} pts — ${q.timeLimit}s</div>`;
+        const start = Date.now();
+        document.getElementById('triviaOpts').innerHTML = q.options.map((o,i) => `<button class="btn trivia-opt" data-idx="${i}">${o}</button>`).join('');
+        document.querySelectorAll('.trivia-opt').forEach(b => b.addEventListener('click', async () => {
+            document.querySelectorAll('.trivia-opt').forEach(x => x.disabled = true);
+            const res = await apiFetch(GAME_API + '/trivia/answer', { method: 'POST', body: JSON.stringify({ userId, questionId: q.id, answer: +b.dataset.idx, timeTaken: Date.now()-start }) });
+            b.classList.add(res.correct ? 'opt-correct' : 'opt-wrong');
+            if (!res.correct) document.querySelectorAll('.trivia-opt')[res.correctAnswer]?.classList.add('opt-correct');
+            document.getElementById('gameResult').innerHTML = `<div class="result-${res.correct?'win':'lose'}">${res.correct?`✅ Correct! +${res.points} pts`:'❌ Wrong!'}</div>`;
+            setTimeout(() => loadQuestion(userId, null), 2500);
+        }));
+    }
+
+    // ── REACTION ──
+    function buildReaction(userId) {
+        const el = document.getElementById('gameArea');
+        el.innerHTML = `<div class="reaction-box" id="reactBox">Click "Start" to begin</div><button class="btn btn-primary spin-btn" id="reactBtn"><i class="fa-solid fa-bolt"></i> START</button>`;
+        document.getElementById('reactBtn').addEventListener('click', async () => {
+            const btn = document.getElementById('reactBtn'); btn.disabled = true;
+            const box = document.getElementById('reactBox');
+            box.className = 'reaction-box reaction-wait'; box.textContent = 'Wait for it...';
+            const d = await apiFetch(GAME_API + '/reaction/start', { method: 'POST' });
+            setTimeout(() => {
+                box.className = 'reaction-box reaction-go'; box.textContent = 'CLICK NOW!';
+                box.onclick = async () => {
+                    box.onclick = null;
+                    const res = await apiFetch(GAME_API + '/reaction/click', { method: 'POST', body: JSON.stringify({ userId, sessionId: d.sessionId, clickTime: Date.now() }) });
+                    box.className = 'reaction-box'; box.textContent = res.valid ? `${res.reactionTime}ms` : 'Too early!';
+                    document.getElementById('gameResult').innerHTML = `<div class="result-${res.valid&&res.rank!=='slow'?'win':'lose'}">${res.valid?`${res.rank.toUpperCase()} — ${res.reactionTime}ms — +${res.points} pts`:'Too early!'}</div>`;
+                    btn.disabled = false;
+                };
+            }, d.waitTime);
+        });
+    }
+
+    // ── WORD GUESS ──
+    function buildWordGuess(userId) {
+        const el = document.getElementById('gameArea');
+        el.innerHTML = `<div class="word-hint" id="wordHint">Press Start to play</div>
+            <input type="text" class="form-input" id="wordInput" placeholder="Your guess..." style="max-width:300px;margin:10px auto;display:block" disabled>
+            <button class="btn btn-primary spin-btn" id="wordBtn"><i class="fa-solid fa-play"></i> NEW WORD</button>`;
+        let sid = null;
+        document.getElementById('wordBtn').addEventListener('click', async () => {
+            const d = await apiFetch(GAME_API + '/word-guess/new', { method: 'POST', body: JSON.stringify({}) });
+            sid = d.sessionId;
+            document.getElementById('wordHint').textContent = d.hint.split('').join(' ');
+            const inp = document.getElementById('wordInput'); inp.disabled = false; inp.value = ''; inp.focus();
+            document.getElementById('gameResult').innerHTML = `<div class="trivia-meta">Guesses left: ${d.maxGuesses}</div>`;
+        });
+        document.getElementById('wordInput').addEventListener('keydown', async (e) => {
+            if (e.key !== 'Enter' || !sid) return;
+            const guess = document.getElementById('wordInput').value.trim(); if (!guess) return;
+            const res = await apiFetch(GAME_API + '/word-guess/guess', { method: 'POST', body: JSON.stringify({ userId, sessionId: sid, guess }) });
+            if (res.correct) { document.getElementById('gameResult').innerHTML = `<div class="result-win">🎉 Correct! ${res.word} — +${res.points} pts</div>`; document.getElementById('wordInput').disabled = true; sid = null; }
+            else if (res.gameOver) { document.getElementById('gameResult').innerHTML = `<div class="result-lose">Game over! The word was ${res.word}</div>`; document.getElementById('wordInput').disabled = true; sid = null; }
+            else { document.getElementById('gameResult').innerHTML = `<div class="trivia-meta">Wrong! Guesses left: ${res.guessesLeft}</div>`; }
+            document.getElementById('wordInput').value = '';
+        });
+    }
+
+    // ── SCRAMBLE ──
+    function buildScramble(userId) {
+        const el = document.getElementById('gameArea');
+        el.innerHTML = `<div class="scramble-word" id="scramWord">???</div>
+            <input type="text" class="form-input" id="scramInput" placeholder="Unscramble..." style="max-width:300px;margin:10px auto;display:block" disabled>
+            <button class="btn btn-primary spin-btn" id="scramBtn"><i class="fa-solid fa-shuffle"></i> NEW WORD</button>`;
+        let sid = null;
+        document.getElementById('scramBtn').addEventListener('click', async () => {
+            const d = await apiFetch(GAME_API + '/scramble/new', { method: 'POST' });
+            sid = d.sessionId;
+            document.getElementById('scramWord').textContent = d.scrambled.split('').join(' ');
+            const inp = document.getElementById('scramInput'); inp.disabled = false; inp.value = ''; inp.focus();
+        });
+        document.getElementById('scramInput').addEventListener('keydown', async (e) => {
+            if (e.key !== 'Enter' || !sid) return;
+            const answer = document.getElementById('scramInput').value.trim();
+            const res = await apiFetch(GAME_API + '/scramble/solve', { method: 'POST', body: JSON.stringify({ userId, sessionId: sid, answer }) });
+            sid = null; document.getElementById('scramInput').disabled = true;
+            document.getElementById('gameResult').innerHTML = res.correct ? `<div class="result-win">🎉 Correct! ${res.word} — +${res.points} pts</div>` : `<div class="result-lose">❌ Wrong! The word was ${res.word}</div>`;
+        });
+    }
+
+    // ── TARGET CLICK ──
+    function buildTargetClick(userId) {
+        const el = document.getElementById('gameArea');
+        el.innerHTML = `<div id="targetArea" style="position:relative;width:100%;height:400px;background:var(--surface);border-radius:var(--radius);overflow:hidden"></div>
+            <button class="btn btn-primary spin-btn" id="targetBtn"><i class="fa-solid fa-crosshairs"></i> START</button>`;
+        let hits = 0;
+        document.getElementById('targetBtn').addEventListener('click', async () => {
+            hits = 0; document.getElementById('targetBtn').disabled = true;
+            const d = await apiFetch(GAME_API + '/target-click/start', { method: 'POST' });
+            const area = document.getElementById('targetArea'); area.innerHTML = '';
+            d.targets.forEach(t => {
+                setTimeout(() => {
+                    const div = document.createElement('div');
+                    div.className = 'target'; div.style.cssText = `left:${t.x}%;top:${t.y}%;width:${t.size}px;height:${t.size}px;position:absolute;`;
+                    div.textContent = '🎯';
+                    div.addEventListener('click', () => { hits++; div.remove(); });
+                    area.appendChild(div);
+                    setTimeout(() => { if (div.parentNode) div.remove(); }, 2000);
+                }, t.delay);
+            });
+            setTimeout(async () => {
+                const res = await apiFetch(GAME_API + '/target-click/result', { method: 'POST', body: JSON.stringify({ userId, hits, totalTargets: d.targets.length, timeMs: d.timeLimit }) });
+                document.getElementById('gameResult').innerHTML = `<div class="result-win">Score: ${res.hits}/${d.targets.length} (${res.accuracy}%) — +${res.points} pts</div>`;
+                document.getElementById('targetBtn').disabled = false;
+            }, d.timeLimit);
+        });
+    }
+
+    // ── GENERIC ──
+    function buildGeneric(game) {
+        document.getElementById('gameArea').innerHTML = `<div style="padding:40px;text-align:center">
+            <div style="font-size:64px;margin-bottom:16px">${game.icon}</div>
+            <h2>${game.name}</h2>
+            <p style="color:var(--text-muted);margin:8px 0">${game.description}</p>
+            <p style="color:var(--text-dim);font-size:13px">Category: ${game.category} | Difficulty: ${game.difficulty} | XP: +${game.xpReward}</p>
+            <p style="margin-top:16px;color:var(--text-muted)">This game is coming soon! Play it from the <a href="/">Dashboard SPA</a>.</p>
+        </div>`;
+    }
+
+    // Boot
+    init();
+    </script>
+</body>
+</html>

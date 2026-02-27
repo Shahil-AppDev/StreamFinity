@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>StreamFinity | Chat</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',system-ui,sans-serif;background:transparent;overflow:hidden;color:#fff}
+#chat{width:100%;height:100vh;display:flex;flex-direction:column;justify-content:flex-end;padding:10px;gap:6px}
+.m{display:flex;align-items:flex-start;gap:10px;padding:8px 12px;border-radius:12px;background:rgba(15,15,25,.7);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,.06);animation:msgIn .4s cubic-bezier(.22,1,.36,1);transform-origin:left center}
+.m.event{background:linear-gradient(135deg,rgba(139,92,246,.15),rgba(59,130,246,.1));border-color:rgba(139,92,246,.2)}
+.m.gift{background:linear-gradient(135deg,rgba(239,68,68,.12),rgba(249,115,22,.08));border-color:rgba(239,68,68,.2)}
+.m.follow{background:linear-gradient(135deg,rgba(16,185,129,.12),rgba(52,211,153,.08));border-color:rgba(16,185,129,.2)}
+.av{width:34px;height:34px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;flex-shrink:0;color:#fff;position:relative;overflow:hidden}
+.av::after{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(255,255,255,.15),transparent);border-radius:inherit}
+.bd{flex:1;min-width:0}
+.un{font-size:12px;font-weight:700;margin-bottom:2px;display:flex;align-items:center;gap:6px}
+.un .badge{font-size:9px;padding:1px 5px;border-radius:4px;font-weight:600;text-transform:uppercase;letter-spacing:.5px}
+.tx{font-size:13px;line-height:1.5;word-break:break-word;color:rgba(255,255,255,.85)}
+.ts{font-size:10px;color:rgba(255,255,255,.3);margin-top:3px}
+@keyframes msgIn{0%{opacity:0;transform:translateY(20px) scale(.95)}100%{opacity:1;transform:translateY(0) scale(1)}}
+.m.removing{animation:msgOut .3s forwards}
+@keyframes msgOut{to{opacity:0;transform:translateX(-30px) scale(.95)}}
+</style>
+</head>
+<body>
+<div id="chat"></div>
+<script src="/widgets/sf-bridge.js"></script>
+<script>
+(function(){
+'use strict';
+var chat=document.getElementById('chat');
+var MAX=60,count=0;
+var palette=['#8b5cf6','#3b82f6','#10b981','#f59e0b','#ef4444','#ec4899','#6366f1','#14b8a6','#f97316','#a855f7'];
+
+function hash(s){var h=0;for(var i=0;i<s.length;i++)h=((h<<5)-h)+s.charCodeAt(i);return Math.abs(h);}
+function esc(s){var d=document.createElement('div');d.textContent=s;return d.innerHTML;}
+function timeStr(){var d=new Date();return d.getHours().toString().padStart(2,'0')+':'+d.getMinutes().toString().padStart(2,'0');}
+
+function addMsg(o){
+    var el=document.createElement('div');
+    el.className='m'+(o.cls?' '+o.cls:'');
+    var c=palette[hash(o.user)%palette.length];
+    var ini=o.user.charAt(0).toUpperCase();
+    var badge=o.badge?'<span class="badge" style="background:'+o.badgeColor+'">'+o.badge+'</span>':'';
+    el.innerHTML='<div class="av" style="background:'+c+'">'+ini+'</div><div class="bd"><div class="un" style="color:'+c+'">'+esc(o.user)+badge+'</div><div class="tx">'+esc(o.text)+'</div><div class="ts">'+timeStr()+'</div></div>';
+    chat.appendChild(el);
+    count++;
+    while(count>MAX){var first=chat.firstElementChild;if(first){first.classList.add('removing');setTimeout(function(n){n.remove()},300,first);count--;} else break;}
+    chat.scrollTop=chat.scrollHeight;
+}
+
+SF.on('chat',function(d){
+    addMsg({user:d.uniqueId||'User',text:d.comment||'',cls:''});
+});
+SF.on('gift',function(d){
+    var txt='sent '+( d.giftName||'a gift');
+    if(d.repeatCount>1) txt+=' x'+d.repeatCount;
+    if(d.diamondCount) txt+=' ('+d.diamondCount+' coins)';
+    addMsg({user:d.uniqueId||'User',text:txt,cls:'gift',badge:'GIFT',badgeColor:'#ef4444'});
+});
+SF.on('follow',function(d){
+    addMsg({user:d.uniqueId||'User',text:'just followed!',cls:'follow',badge:'NEW',badgeColor:'#10b981'});
+});
+SF.on('share',function(d){
+    addMsg({user:d.uniqueId||'User',text:'shared the stream!',cls:'event',badge:'SHARE',badgeColor:'#3b82f6'});
+});
+SF.on('subscribe',function(d){
+    addMsg({user:d.uniqueId||'User',text:'subscribed!',cls:'event',badge:'SUB',badgeColor:'#f59e0b'});
+});
+
+// Preview demo
+if(SF.preview){
+    var users=['StreamFan','GiftKing','NewViewer','TikTokPro','ChatMaster','MusicLover','BigSpender','LoyalFan'];
+    var msgs=['Hello everyone!','Great stream! 🔥','Love this content','First time here! 👋','Keep it up!','Amazing! 🎉','LOL 😂','Let\'s go!','❤️❤️❤️','This is awesome','GG!','Hype! 🚀'];
+    setInterval(function(){
+        var r=Math.random();
+        if(r<0.7) addMsg({user:users[Math.floor(Math.random()*users.length)],text:msgs[Math.floor(Math.random()*msgs.length)]});
+        else if(r<0.85) SF._fakeGift(users[Math.floor(Math.random()*users.length)],'Rose',1,1);
+        else if(r<0.95) SF._fakeFollow(users[Math.floor(Math.random()*users.length)]);
+        else SF._fakeShare(users[Math.floor(Math.random()*users.length)]);
+    },2500);
+}
+})();
+</script>
+</body>
+</html>

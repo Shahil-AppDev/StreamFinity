@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>StreamFinity | Sound Alert</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',system-ui,sans-serif;background:transparent;overflow:hidden;color:#fff}
+.alert-container{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none}
+.alert-popup{display:none;flex-direction:column;align-items:center;gap:12px;padding:24px 32px;border-radius:20px;background:rgba(15,15,25,.85);-webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px);border:1px solid rgba(139,92,246,.3);box-shadow:0 0 40px rgba(139,92,246,.2),0 8px 32px rgba(0,0,0,.4);animation:popIn .5s cubic-bezier(.22,1,.36,1) forwards;max-width:400px;text-align:center}
+.alert-popup.show{display:flex}
+.alert-popup.hiding{animation:popOut .4s ease forwards}
+.alert-icon{width:80px;height:80px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:36px;position:relative;overflow:hidden}
+.alert-icon img{width:64px;height:64px;object-fit:contain;filter:drop-shadow(0 2px 8px rgba(0,0,0,.3))}
+.alert-icon::after{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(255,255,255,.15),transparent);border-radius:inherit}
+.alert-title{font-size:18px;font-weight:800;background:linear-gradient(135deg,#a78bfa,#60a5fa);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.alert-detail{font-size:13px;color:rgba(255,255,255,.6);line-height:1.5}
+.alert-user{font-weight:700;color:#a78bfa}
+.ring{position:absolute;inset:-4px;border-radius:50%;border:2px solid rgba(139,92,246,.4);animation:ringPulse 1.5s ease infinite}
+@keyframes popIn{0%{opacity:0;transform:scale(.5) translateY(20px)}100%{opacity:1;transform:scale(1) translateY(0)}}
+@keyframes popOut{0%{opacity:1;transform:scale(1)}100%{opacity:0;transform:scale(.8) translateY(-20px)}}
+@keyframes ringPulse{0%,100%{transform:scale(1);opacity:.4}50%{transform:scale(1.15);opacity:0}}
+</style>
+</head>
+<body>
+<div class="alert-container">
+    <div class="alert-popup" id="alertBox">
+        <div class="alert-icon" id="alertIcon"><div class="ring"></div></div>
+        <div class="alert-title" id="alertTitle"></div>
+        <div class="alert-detail" id="alertDetail"></div>
+    </div>
+</div>
+<script src="/widgets/sf-bridge.js"></script>
+<script>
+(function(){
+'use strict';
+
+var alertBox = document.getElementById('alertBox');
+var alertIcon = document.getElementById('alertIcon');
+var alertTitle = document.getElementById('alertTitle');
+var alertDetail = document.getElementById('alertDetail');
+
+// ── Sound alert config (loaded from server or localStorage) ──
+var soundAlerts = [];
+var masterVolume = 0.8;
+var soundEnabled = true;
+var queue = [];
+var playing = false;
+
+// Load config from localStorage (synced from SPA)
+function loadConfig() {
+    try {
+        var cfg = JSON.parse(localStorage.getItem('sf_sound_config') || '{}');
+        masterVolume = cfg.volume !== undefined ? cfg.volume / 100 : 0.8;
+        soundEnabled = cfg.enabled !== false;
+    } catch(_) {}
+    try {
+        soundAlerts = JSON.parse(localStorage.getItem('sf_sounds') || '[]');
+    } catch(_) { soundAlerts = []; }
+    // If no user sounds, load defaults
+    if (!soundAlerts.length) loadDefaults();
+}
+
+function loadDefaults() {
+    fetch('/api/sounds/defaults').then(function(r){return r.json();}).then(function(data) {
+        if (!data.sounds || !data.sounds.length) return;
+        // Auto-map defaults to triggers
+        var map = {
+            'gift-alert': 'Any Gift',
+            'follow-alert': 'New Follower',
+            'share-alert': 'Share',
+            'sub-alert': 'Sub / Subscribe',
+            'chat-alert': 'Chat Command',
+            'like-alert': 'Like',
+            'coin-alert': 'Gift: Rose',
+            'levelup-alert': 'Level Up',
+            'airhorn': 'Chat: !airhorn',
+            'ding': 'Chat: !ding'
+        };
+        soundAlerts = data.sounds.map(function(s) {
+            var base = s.filename.replace(/\.[^.]+$/, '');
+            return { id: 's_' + base, name: base.replace(/-/g, ' '), trigger: map[base] || 'Any Gift', file: s.url, volume: 100 };
+        });
+    }).catch(function(){});
+}
+
+loadConfig();
+
+// ── Audio playback queue ──
+function enqueue(alert, eventData) {
+    queue.push({ alert: alert, data: eventData });
+    if (!playing) processQueue();
+}
+
+function processQueue() {
+    if (!queue.length) { playing = false; return; }
+    playing = true;
+    var item = queue.shift();
+    var a = item.alert;
+    var d = item.data;
+
+    // Show visual popup
+    showPopup(a, d);
+
+    // Play sound
+    var audio = new Audio(a.file);
+    audio.volume = masterVolume * ((a.volume || 100) / 100);
+    audio.onended = function() { setTimeout(processQueue, 300); };
+    audio.onerror = function() { setTimeout(processQueue, 300); };
+    audio.play().catch(function() { setTimeout(processQueue, 300); });
+}
+
+function showPopup(alert, data) {
+    alertBox.classList.remove('hiding');
+    alertBox.classList.add('show');
+
+    // Icon
+    var iconHtml = '';
+    if (data.giftPictureUrl) {
+        iconHtml = '<div class="ring"></div><img src="' + data.giftPictureUrl + '" alt="">';
+    } else if (data.giftName) {
+        iconHtml = '<div class="ring"></div><span style="font-size:36px">🎁</span>';
+    } else if (alert.trigger && alert.trigger.indexOf('Follow') >= 0) {
+        iconHtml = '<div class="ring"></div><span style="font-size:36px">👤</span>';
+    } else if (alert.trigger && alert.trigger.indexOf('Share') >= 0) {
+        iconHtml = '<div class="ring"></div><span style="font-size:36px">🔗</span>';
+    } else {
+        iconHtml = '<div class="ring"></div><span style="font-size:36px">🔔</span>';
+    }
+    alertIcon.innerHTML = iconHtml;
+
+    // Title
+    var title = alert.name || 'Alert';
+    if (data.giftName) title = data.giftName;
+    if (data.repeatCount > 1) title += ' x' + data.repeatCount;
+    alertTitle.textContent = title;
+
+    // Detail
+    var detail = '';
+    if (data.uniqueId || data.nickname) detail = '<span class="alert-user">@' + (data.uniqueId || data.nickname) + '</span>';
+    if (data.diamondCount) detail += ' sent ' + ((data.diamondCount || 0) * (data.repeatCount || 1)) + ' diamonds';
+    alertDetail.innerHTML = detail || 'Sound Alert';
+
+    // Auto-hide
+    setTimeout(function() {
+        alertBox.classList.add('hiding');
+        setTimeout(function() { alertBox.classList.remove('show', 'hiding'); }, 500);
+    }, 3000);
+}
+
+// ── Trigger matching ──
+function findMatchingAlerts(eventType, data) {
+    var matches = [];
+    for (var i = 0; i < soundAlerts.length; i++) {
+        var s = soundAlerts[i];
+        var trigger = (s.trigger || '').toLowerCase();
+
+        if (eventType === 'gift') {
+            if (trigger === 'any gift') { matches.push(s); continue; }
+            if (trigger.indexOf('gift:') === 0) {
+                var gName = trigger.substring(5).trim();
+                if (data.giftName && data.giftName.toLowerCase() === gName) { matches.push(s); continue; }
+            }
+        }
+        if (eventType === 'follow' && trigger.indexOf('follow') >= 0) { matches.push(s); continue; }
+        if (eventType === 'share' && trigger.indexOf('share') >= 0) { matches.push(s); continue; }
+        if (eventType === 'subscribe' && trigger.indexOf('sub') >= 0) { matches.push(s); continue; }
+        if (eventType === 'like' && trigger === 'like') { matches.push(s); continue; }
+        if (eventType === 'chat') {
+            if (trigger.indexOf('chat:') === 0) {
+                var cmd = trigger.substring(5).trim();
+                if (data.comment && data.comment.toLowerCase().indexOf(cmd) === 0) { matches.push(s); continue; }
+            }
+        }
+    }
+    return matches;
+}
+
+function handleEvent(type, data) {
+    if (!soundEnabled) return;
+    var alerts = findMatchingAlerts(type, data);
+    if (alerts.length) enqueue(alerts[0], data);
+}
+
+// ── WebSocket events ──
+SF.on('gift', function(d) { handleEvent('gift', d); });
+SF.on('giftStreak', function(d) { handleEvent('gift', d); });
+SF.on('follow', function(d) { handleEvent('follow', d); });
+SF.on('share', function(d) { handleEvent('share', d); });
+SF.on('subscribe', function(d) { handleEvent('subscribe', d); });
+SF.on('like', function(d) { handleEvent('like', d); });
+SF.on('chat', function(d) { handleEvent('chat', d); });
+
+// ── Listen for config updates from SPA ──
+window.addEventListener('storage', function(e) {
+    if (e.key === 'sf_sounds' || e.key === 'sf_sound_config') loadConfig();
+});
+
+// ── Preview mode ──
+if (SF.preview) {
+    var demoSounds = ['gift-alert','follow-alert','share-alert','coin-alert','ding'];
+    var demoIdx = 0;
+    function demoPlay() {
+        var name = demoSounds[demoIdx % demoSounds.length];
+        demoIdx++;
+        var fakeAlert = { name: name.replace(/-/g, ' '), trigger: 'Any Gift', file: '/sounds/defaults/' + name + '.wav', volume: 100 };
+        var fakeData = { uniqueId: 'DemoViewer', giftName: 'Rose', diamondCount: 1, repeatCount: 1 };
+        if (name.indexOf('follow') >= 0) { fakeData = { uniqueId: 'NewFollower' }; fakeAlert.trigger = 'New Follower'; }
+        if (name.indexOf('share') >= 0) { fakeData = { uniqueId: 'Sharer' }; fakeAlert.trigger = 'Share'; }
+        enqueue(fakeAlert, fakeData);
+        setTimeout(demoPlay, 5000 + Math.random() * 3000);
+    }
+    setTimeout(demoPlay, 1500);
+}
+
+})();
+</script>
+</body>
+</html>

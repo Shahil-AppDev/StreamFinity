@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>StreamFinity Server</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #0f172a 100%); color: #e2e8f0; min-height: 100vh; }
+        .container { max-width: 960px; margin: 0 auto; padding: 40px 20px; }
+        .header { text-align: center; margin-bottom: 40px; }
+        .header h1 { font-size: 2.5rem; background: linear-gradient(135deg, #6366f1, #8b5cf6, #ec4899); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .header p { color: #94a3b8; margin-top: 8px; }
+        .badge { display: inline-block; background: linear-gradient(135deg, #f59e0b, #ec4899); color: white; padding: 6px 16px; border-radius: 20px; font-size: 0.85rem; font-weight: 600; margin-top: 12px; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 30px; }
+        .card { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 20px; transition: border-color 0.2s; }
+        .card:hover { border-color: rgba(139,92,246,0.4); }
+        .card h3 { color: #a5b4fc; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px; }
+        .card .value { font-size: 1.4rem; font-weight: 700; }
+        .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #10b981; margin-right: 6px; animation: pulse 2s infinite; }
+        @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.5; } }
+        .section { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 24px; margin-bottom: 20px; }
+        .section h2 { color: #a5b4fc; margin-bottom: 14px; font-size: 1.1rem; }
+        .ep { padding: 7px 0; border-bottom: 1px solid rgba(255,255,255,0.05); font-family: 'SF Mono', 'Fira Code', monospace; font-size: 0.82rem; display: flex; gap: 10px; }
+        .ep:last-child { border-bottom: none; }
+        .m { min-width: 45px; color: #10b981; font-weight: 600; }
+        .m.ws { color: #f59e0b; }
+        .path { color: #cbd5e1; }
+        .desc { color: #64748b; margin-left: auto; font-size: 0.78rem; }
+        .platforms { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; }
+        .plat { background: rgba(255,255,255,0.04); border-radius: 8px; padding: 14px; }
+        .plat h4 { font-size: 0.9rem; margin-bottom: 4px; }
+        .plat .sub { color: #64748b; font-size: 0.78rem; }
+        #live-data .value { transition: all 0.3s; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>StreamFinity Server</h1>
+            <p>Unified Multi-Platform Live Streaming Server</p>
+            <div class="badge">PRO UNLIMITED</div>
+        </div>
+
+        <div class="grid" id="live-data">
+            <div class="card"><h3>Status</h3><div class="value"><span class="dot"></span><span id="s-status">Online</span></div></div>
+            <div class="card"><h3>Uptime</h3><div class="value" id="s-uptime">--</div></div>
+            <div class="card"><h3>Platforms</h3><div class="value">4 Active</div></div>
+            <div class="card"><h3>WS Clients</h3><div class="value" id="s-ws">0</div></div>
+            <div class="card"><h3>Cache Entries</h3><div class="value" id="s-cache">0</div></div>
+            <div class="card"><h3>Cache Hit Rate</h3><div class="value" id="s-hit">0%</div></div>
+        </div>
+
+        <div class="section">
+            <h2>Platforms</h2>
+            <div class="platforms">
+                <div class="plat"><h4>StreamFinity</h4><div class="sub">Live streaming, TikTok bridge, gifts, chat</div></div>
+                <div class="plat"><h4>StreamTory</h4><div class="sub">Analytics, overlays, revenue tracking</div></div>
+                <div class="plat"><h4>StreamControl</h4><div class="sub">Games, polls, rewards, moderation</div></div>
+                <div class="plat"><h4>StreamerBot</h4><div class="sub">WebSocket API, Twitch/YT/Kick automation</div></div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>API Endpoints</h2>
+            <div class="ep"><span class="m">GET</span><span class="path">/api/unified/status</span><span class="desc">Server status & metrics</span></div>
+            <div class="ep"><span class="m">GET</span><span class="path">/api/unified/health</span><span class="desc">Health check</span></div>
+            <div class="ep"><span class="m">GET</span><span class="path">/api/unified/assets/all</span><span class="desc">All assets cross-platform</span></div>
+            <div class="ep"><span class="m">GET</span><span class="path">/api/assets/:platform/:category</span><span class="desc">List assets by category</span></div>
+            <div class="ep"><span class="m">GET</span><span class="path">/api/assets/:platform/:category/:id</span><span class="desc">Serve specific asset</span></div>
+            <div class="ep"><span class="m">GET</span><span class="path">/api/loaders/status</span><span class="desc">All loader statuses</span></div>
+            <div class="ep"><span class="m">POST</span><span class="path">/api/loaders/:platform/initialize</span><span class="desc">Init a loader</span></div>
+            <div class="ep"><span class="m">GET</span><span class="path">/api/loaders/tikfinity/overlays</span><span class="desc">TikFinity overlays</span></div>
+            <div class="ep"><span class="m">GET</span><span class="path">/api/loaders/streamtory/templates</span><span class="desc">Analytics templates</span></div>
+            <div class="ep"><span class="m">GET</span><span class="path">/api/loaders/streamcontrol/games</span><span class="desc">Game templates</span></div>
+            <div class="ep"><span class="m">GET</span><span class="path">/api/loaders/streamcontrol/rewards</span><span class="desc">Reward assets</span></div>
+            <div class="ep"><span class="m">GET</span><span class="path">/api/loaders/streamcontrol/polls</span><span class="desc">Poll system config</span></div>
+            <div class="ep"><span class="m">GET</span><span class="path">/api/user/license</span><span class="desc">Pro license (always valid)</span></div>
+            <div class="ep"><span class="m">GET</span><span class="path">/api/features/list</span><span class="desc">All features unlocked</span></div>
+            <div class="ep"><span class="m">GET</span><span class="path">/electron/:filename</span><span class="desc">Electron scripts proxy</span></div>
+            <div class="ep"><span class="m">GET</span><span class="path">/extension/:filename</span><span class="desc">Bridge scripts proxy</span></div>
+            <div class="ep"><span class="m ws">WS</span><span class="path">/ws</span><span class="desc">StreamerBot WebSocket relay</span></div>
+        </div>
+
+        <div class="section">
+            <h2>Cache Management</h2>
+            <div class="ep"><span class="m">GET</span><span class="path">/api/unified/cache/stats</span><span class="desc">Cache statistics</span></div>
+            <div class="ep"><span class="m">POST</span><span class="path">/api/unified/cache/clear</span><span class="desc">Clear all caches</span></div>
+        </div>
+    </div>
+
+    <script>
+        async function refresh() {
+            try {
+                const r = await fetch('/api/unified/status');
+                const d = await r.json();
+                document.getElementById('s-uptime').textContent = d.uptimeHuman || '--';
+                document.getElementById('s-ws').textContent = d.wsClients || 0;
+                if (d.cache && d.cache.cache) {
+                    document.getElementById('s-cache').textContent = d.cache.cache.entries || 0;
+                    document.getElementById('s-hit').textContent = (d.cache.cache.hitRate || 0) + '%';
+                }
+            } catch (_) {}
+        }
+        refresh();
+        setInterval(refresh, 5000);
+    </script>
+</body>
+</html>

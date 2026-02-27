@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>StreamFinity | Gift Cannon</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:transparent;overflow:hidden;height:100vh;width:100vw}
+.proj{position:fixed;font-size:32px;pointer-events:none;z-index:9999;filter:drop-shadow(0 2px 8px rgba(0,0,0,.4))}
+</style>
+</head>
+<body>
+<script src="/widgets/sf-bridge.js"></script>
+<script>
+(function(){
+'use strict';
+var emojis=['🎁','🌹','👑','🦁','🎮','🚀','⭐','💎','🎊','🔥'];
+function launch(count){
+    for(var i=0;i<Math.min(count||3,20);i++){
+        setTimeout(function(){
+            var el=document.createElement('div');
+            el.className='proj';
+            el.textContent=emojis[Math.floor(Math.random()*emojis.length)];
+            var startX=Math.random()*40;
+            var startY=60+Math.random()*30;
+            var vx=8+Math.random()*12;
+            var vy=-(12+Math.random()*8);
+            var rot=0,rotSpeed=(Math.random()-0.5)*15;
+            var size=24+Math.random()*24;
+            el.style.fontSize=size+'px';
+            el.style.left=startX+'vw';
+            el.style.top=startY+'vh';
+            document.body.appendChild(el);
+            var x=startX/100*window.innerWidth,y=startY/100*window.innerHeight;
+            var gravity=0.4,opacity=1;
+            function frame(){
+                vy+=gravity;x+=vx;y+=vy;rot+=rotSpeed;opacity-=0.008;
+                if(opacity<=0||y>window.innerHeight+50){el.remove();return;}
+                el.style.transform='translate('+x+'px,'+y+'px) rotate('+rot+'deg)';
+                el.style.opacity=opacity;
+                requestAnimationFrame(frame);
+            }
+            x=0;y=0;
+            requestAnimationFrame(frame);
+        },i*80);
+    }
+}
+SF.on('gift',function(d){launch(d.repeatCount||3);});
+if(SF.preview){launch(8);setInterval(function(){launch(5);},5000);}
+})();
+</script>
+</body>
+</html>

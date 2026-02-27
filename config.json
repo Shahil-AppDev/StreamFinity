@@ -1,0 +1,49 @@
+{
+  "app": {
+    "name": "StreamFinity",
+    "version": "1.0.0",
+    "mode": "unified"
+  },
+  "platforms": {
+    "streamfinity": { "enabled": true, "autoStart": true },
+    "streamtory": { "enabled": true, "autoStart": true },
+    "streamcontrol": { "enabled": true, "autoStart": true },
+    "streamerbot": { "enabled": true, "autoStart": true }
+  },
+  "hosts": {
+    "primary": "https://streamfinity.zerody.one",
+    "fallback": "http://streamfinity-origin.zerody.one",
+    "api": "http://localhost:8080",
+    "websocket": "ws://localhost:8081"
+  },
+  "ui": {
+    "theme": "dark",
+    "colors": {
+      "primary": "#6366f1",
+      "secondary": "#8b5cf6",
+      "accent": "#ec4899"
+    }
+  },
+  "integrations": {
+    "tiktok": { "enabled": true },
+    "discord": { "enabled": false },
+    "obs": { "enabled": false, "port": 4444 },
+    "streamerbot": {
+      "enabled": true,
+      "host": "tik.starline-agency.xyz",
+      "port": 80,
+      "path": "/ws",
+      "protocol": "ws",
+      "fallbackHost": "127.0.0.1",
+      "fallbackPort": 8080,
+      "autoConnect": true,
+      "reconnectDelay": 5000,
+      "requestTimeout": 10000
+    }
+  },
+  "pro": {
+    "enabled": true,
+    "lifetime": true,
+    "bypassLicense": true
+  }
+}

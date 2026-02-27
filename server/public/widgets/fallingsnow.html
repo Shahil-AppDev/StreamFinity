@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>StreamFinity | Falling Snow</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:transparent;overflow:hidden;height:100vh;width:100vw}
+.flake{position:fixed;top:-20px;color:#fff;font-size:14px;opacity:.8;pointer-events:none;animation:fall linear forwards;z-index:9999;filter:drop-shadow(0 0 4px rgba(255,255,255,.3))}
+@keyframes fall{to{transform:translateY(110vh) rotate(360deg);opacity:0}}
+</style>
+</head>
+<body>
+<script src="/widgets/sf-bridge.js"></script>
+<script>
+(function(){
+'use strict';
+var flakes=['❄','❅','❆','✦','•'];
+function spawn(){
+    var el=document.createElement('div');
+    el.className='flake';
+    el.textContent=flakes[Math.floor(Math.random()*flakes.length)];
+    var size=8+Math.random()*18;
+    var dur=4+Math.random()*8;
+    var x=Math.random()*100;
+    el.style.cssText='left:'+x+'vw;font-size:'+size+'px;opacity:'+(0.3+Math.random()*0.6)+';animation-duration:'+dur+'s';
+    document.body.appendChild(el);
+    setTimeout(function(){el.remove();},dur*1000);
+}
+setInterval(spawn,200);
+for(var i=0;i<20;i++) setTimeout(spawn,i*100);
+})();
+</script>
+</body>
+</html>

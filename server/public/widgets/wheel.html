@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>StreamFinity | Spin Wheel</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',system-ui,sans-serif;background:transparent;display:flex;align-items:center;justify-content:center;height:100vh;overflow:hidden}
+.wheel-wrap{position:relative;width:360px;height:360px}
+canvas{width:360px;height:360px;filter:drop-shadow(0 8px 32px rgba(0,0,0,.4))}
+.pointer{position:absolute;top:-6px;left:50%;transform:translateX(-50%);z-index:3;width:0;height:0;border-left:16px solid transparent;border-right:16px solid transparent;border-top:34px solid #8b5cf6;filter:drop-shadow(0 2px 6px rgba(139,92,246,.5))}
+.pointer::after{content:'';position:absolute;top:-34px;left:-8px;width:0;height:0;border-left:8px solid transparent;border-right:8px solid transparent;border-top:12px solid rgba(255,255,255,.3)}
+.center{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:56px;height:56px;border-radius:50%;background:rgba(15,15,25,.9);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);border:3px solid rgba(139,92,246,.4);display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:800;color:#fff;z-index:3;cursor:pointer;box-shadow:0 0 20px rgba(139,92,246,.2);transition:transform .15s,box-shadow .15s}
+.center:hover{transform:translate(-50%,-50%) scale(1.08);box-shadow:0 0 30px rgba(139,92,246,.4)}
+.center:active{transform:translate(-50%,-50%) scale(.95)}
+.result{position:absolute;bottom:-56px;left:50%;transform:translateX(-50%);padding:10px 24px;border-radius:12px;background:rgba(15,15,25,.85);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);border:1px solid rgba(139,92,246,.2);font-size:16px;font-weight:700;color:#fff;white-space:nowrap;opacity:0;transform:translateX(-50%) translateY(8px);transition:opacity .4s,transform .4s;box-shadow:0 4px 20px rgba(0,0,0,.3)}
+.result.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.result-icon{margin-right:6px}
+.outer-ring{position:absolute;inset:-4px;border-radius:50%;border:3px solid rgba(139,92,246,.15);pointer-events:none}
+.outer-ring.spinning{animation:ringGlow 1s ease infinite alternate}
+@keyframes ringGlow{0%{border-color:rgba(139,92,246,.1);box-shadow:none}100%{border-color:rgba(139,92,246,.3);box-shadow:0 0 20px rgba(139,92,246,.15)}}
+</style>
+</head>
+<body>
+<div class="wheel-wrap">
+    <div class="outer-ring" id="ring"></div>
+    <div class="pointer"></div>
+    <canvas id="wheel" width="360" height="360"></canvas>
+    <div class="center" id="spinBtn">▶</div>
+    <div class="result" id="result"></div>
+</div>
+<script src="/widgets/sf-bridge.js"></script>
+<script>
+(function(){
+'use strict';
+var params=new URLSearchParams(location.search);
+var segments=[];
+try{segments=JSON.parse(params.get('segments')||'[]');}catch(_){}
+if(!segments.length) segments=['Prize 1','Prize 2','Prize 3','Prize 4','Prize 5','Prize 6','Prize 7','Prize 8'];
+
+var gradients=[
+    ['#8b5cf6','#7c3aed'],['#3b82f6','#2563eb'],['#ec4899','#db2777'],
+    ['#10b981','#059669'],['#f59e0b','#d97706'],['#ef4444','#dc2626'],
+    ['#06b6d4','#0891b2'],['#a855f7','#9333ea'],['#f97316','#ea580c'],
+    ['#14b8a6','#0d9488'],
+];
+var canvas=document.getElementById('wheel');
+var ctx=canvas.getContext('2d');
+var W=360,cx=W/2,cy=W/2,R=170,innerR=40;
+var angle=0,spinning=false;
+
+function draw(){
+    ctx.clearRect(0,0,W,W);
+    var arc=2*Math.PI/segments.length;
+    // Segments
+    for(var i=0;i<segments.length;i++){
+        var g=gradients[i%gradients.length];
+        var a1=angle+i*arc,a2=angle+(i+1)*arc;
+        // Fill
+        var grd=ctx.createRadialGradient(cx,cy,innerR,cx,cy,R);
+        grd.addColorStop(0,g[1]);grd.addColorStop(1,g[0]);
+        ctx.beginPath();ctx.moveTo(cx,cy);ctx.arc(cx,cy,R,a1,a2);ctx.closePath();
+        ctx.fillStyle=grd;ctx.fill();
+        // Border
+        ctx.strokeStyle='rgba(0,0,0,.15)';ctx.lineWidth=1.5;ctx.stroke();
+        // Highlight
+        ctx.beginPath();ctx.moveTo(cx,cy);ctx.arc(cx,cy,R,a1,a1+arc*0.02);ctx.closePath();
+        ctx.fillStyle='rgba(255,255,255,.12)';ctx.fill();
+        // Text
+        ctx.save();ctx.translate(cx,cy);ctx.rotate(a1+arc/2);
+        ctx.fillStyle='#fff';ctx.font='600 11px Inter,system-ui';ctx.textAlign='right';ctx.textBaseline='middle';
+        ctx.shadowColor='rgba(0,0,0,.4)';ctx.shadowBlur=4;
+        var txt=segments[i].length>14?segments[i].substring(0,13)+'…':segments[i];
+        ctx.fillText(txt,R-16,0);
+        ctx.shadowBlur=0;ctx.restore();
+    }
+    // Outer ring
+    ctx.beginPath();ctx.arc(cx,cy,R,0,2*Math.PI);
+    ctx.strokeStyle='rgba(255,255,255,.1)';ctx.lineWidth=3;ctx.stroke();
+    // Inner circle
+    ctx.beginPath();ctx.arc(cx,cy,innerR-2,0,2*Math.PI);
+    ctx.fillStyle='rgba(15,15,25,.8)';ctx.fill();
+    ctx.strokeStyle='rgba(139,92,246,.3)';ctx.lineWidth=2;ctx.stroke();
+}
+draw();
+
+function spin(triggeredBy){
+    if(spinning)return;spinning=true;
+    document.getElementById('result').className='result';
+    document.getElementById('ring').classList.add('spinning');
+    var target=Math.random()*2*Math.PI+10*Math.PI;
+    var duration=4500;var start=performance.now();
+    function animate(now){
+        var t=Math.min((now-start)/duration,1);
+        var ease=1-Math.pow(1-t,4);
+        angle=ease*target;draw();
+        if(t<1){requestAnimationFrame(animate);}
+        else{
+            spinning=false;
+            document.getElementById('ring').classList.remove('spinning');
+            var arc=2*Math.PI/segments.length;
+            var norm=((2*Math.PI-(angle%(2*Math.PI)))+arc/2)%(2*Math.PI);
+            var idx=Math.floor(norm/arc)%segments.length;
+            var res=document.getElementById('result');
+            res.innerHTML='<span class="result-icon">🎉</span>'+segments[idx]+(triggeredBy?' <span style="color:rgba(255,255,255,.4);font-size:12px">— @'+triggeredBy+'</span>':'');
+            res.className='result show';
+        }
+    }
+    requestAnimationFrame(animate);
+}
+document.getElementById('spinBtn').addEventListener('click',function(){spin();});
+
+SF.on('gift',function(d){spin(d.uniqueId||d.nickname);});
+SF.on('wheelSpin',function(d){spin(d.uniqueId||d.nickname);});
+if(SF.preview){setTimeout(function(){spin('DemoViewer');},2000);}
+})();
+</script>
+</body>
+</html>

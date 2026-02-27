@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>StreamFinity | Gift Firework</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:transparent;overflow:hidden;height:100vh;width:100vw}
+.gift-explosion{position:fixed;pointer-events:none;z-index:10}
+.gift-particle{position:absolute;pointer-events:none;will-change:transform,opacity}
+.gift-particle img{width:100%;height:100%;object-fit:contain;filter:drop-shadow(0 2px 8px rgba(0,0,0,.4))}
+.gift-label{position:absolute;left:50%;transform:translateX(-50%);bottom:-30px;white-space:nowrap;font-family:'Inter',system-ui,sans-serif;font-size:14px;font-weight:700;color:#fff;text-shadow:0 2px 8px rgba(0,0,0,.6);opacity:0;animation:labelIn .5s .3s ease forwards}
+.gift-center{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);pointer-events:none;z-index:20}
+.gift-center img{width:80px;height:80px;object-fit:contain;filter:drop-shadow(0 4px 16px rgba(139,92,246,.5));animation:centerPop .6s cubic-bezier(.34,1.56,.64,1)}
+.sparkle{position:absolute;width:6px;height:6px;border-radius:50%;pointer-events:none}
+@keyframes centerPop{0%{transform:scale(0);opacity:0}100%{transform:scale(1);opacity:1}}
+@keyframes labelIn{to{opacity:1}}
+@keyframes sparkle{0%{opacity:1;transform:translate(0,0) scale(1)}100%{opacity:0;transform:translate(var(--sx),var(--sy)) scale(0)}}
+@keyframes giftFly{0%{opacity:1;transform:translate(0,0) rotate(0deg) scale(1)}100%{opacity:0;transform:translate(var(--tx),var(--ty)) rotate(var(--rot)) scale(.3)}}
+@keyframes fadeAll{0%{opacity:1}100%{opacity:0}}
+</style>
+</head>
+<body>
+<script src="/widgets/sf-bridge.js"></script>
+<script>
+(function(){
+'use strict';
+
+// ── Gift catalog cache ──
+var giftCatalog=[];
+var giftByName={};
+var catalogReady=false;
+
+function loadCatalog(){
+    fetch('/api/gifts?limit=500').then(function(r){return r.json();}).then(function(data){
+        giftCatalog=(data.gifts||data.data||[]).filter(function(g){return !g.isCreator;});
+        giftCatalog.forEach(function(g){giftByName[g.name.toLowerCase()]=g;});
+        catalogReady=true;
+    }).catch(function(){catalogReady=false;});
+}
+loadCatalog();
+
+function findGift(name){
+    if(!name) return null;
+    return giftByName[name.toLowerCase()]||null;
+}
+function randomGift(){
+    if(!giftCatalog.length) return null;
+    return giftCatalog[Math.floor(Math.random()*giftCatalog.length)];
+}
+
+// ── Preload images ──
+var imgCache={};
+function getImg(src,cb){
+    if(imgCache[src]){cb(imgCache[src]);return;}
+    var img=new Image();
+    img.crossOrigin='anonymous';
+    img.onload=function(){imgCache[src]=img;cb(img);};
+    img.onerror=function(){cb(null);};
+    img.src=src;
+}
+
+// ── Sparkle colors ──
+var sparkColors=['#8b5cf6','#3b82f6','#10b981','#f59e0b','#ef4444','#ec4899','#fbbf24','#a78bfa','#34d399','#f97316'];
+
+// ── Explosion effect ──
+function explode(gift,count,userName){
+    if(!gift||!gift.image) return;
+    var cx=Math.random()*window.innerWidth*0.6+window.innerWidth*0.2;
+    var cy=Math.random()*window.innerHeight*0.4+window.innerHeight*0.15;
+
+    var container=document.createElement('div');
+    container.className='gift-explosion';
+    container.style.cssText='left:'+cx+'px;top:'+cy+'px;width:0;height:0';
+
+    // Center gift image (big)
+    var center=document.createElement('div');
+    center.className='gift-center';
+    center.innerHTML='<img src="'+gift.image+'" alt="'+gift.name+'">';
+    container.appendChild(center);
+
+    // Label
+    var label=document.createElement('div');
+    label.className='gift-label';
+    var labelText=gift.name;
+    if(count>1) labelText+=' x'+count;
+    if(userName) labelText+=' — @'+userName;
+    label.textContent=labelText;
+    center.appendChild(label);
+
+    // Flying gift particles (real gift images)
+    var numParticles=Math.min(Math.max(count*3,8),24);
+    for(var i=0;i<numParticles;i++){
+        var p=document.createElement('div');
+        p.className='gift-particle';
+        var size=20+Math.random()*24;
+        var angle=Math.random()*Math.PI*2;
+        var dist=80+Math.random()*120;
+        var tx=Math.cos(angle)*dist;
+        var ty=Math.sin(angle)*dist-40;
+        var rot=(Math.random()-0.5)*720;
+        var dur=0.8+Math.random()*0.6;
+        var delay=Math.random()*0.3;
+        p.style.cssText='width:'+size+'px;height:'+size+'px;left:-'+size/2+'px;top:-'+size/2+'px;animation:giftFly '+dur+'s '+delay+'s ease-out forwards;--tx:'+tx+'px;--ty:'+ty+'px;--rot:'+rot+'deg';
+        p.innerHTML='<img src="'+gift.image+'">';
+        container.appendChild(p);
+    }
+
+    // Sparkles
+    for(var j=0;j<20;j++){
+        var s=document.createElement('div');
+        s.className='sparkle';
+        var sAngle=Math.random()*Math.PI*2;
+        var sDist=60+Math.random()*100;
+        var sSize=3+Math.random()*5;
+        var sDur=0.6+Math.random()*0.5;
+        var sDelay=Math.random()*0.2;
+        var sColor=sparkColors[j%sparkColors.length];
+        s.style.cssText='width:'+sSize+'px;height:'+sSize+'px;background:'+sColor+';box-shadow:0 0 6px '+sColor+';animation:sparkle '+sDur+'s '+sDelay+'s ease-out forwards;--sx:'+Math.cos(sAngle)*sDist+'px;--sy:'+Math.sin(sAngle)*sDist+'px';
+        container.appendChild(s);
+    }
+
+    document.body.appendChild(container);
+
+    // Fade out and remove
+    setTimeout(function(){
+        container.style.animation='fadeAll 0.5s ease forwards';
+        setTimeout(function(){container.remove();},600);
+    },2500);
+}
+
+// ── Events ──
+SF.on('gift',function(d){
+    // 1. Try local catalog by name
+    var gift=findGift(d.giftName);
+    // 2. Fallback: use TikTok's own giftPictureUrl
+    if(!gift && d.giftPictureUrl){
+        gift={name:d.giftName||'Gift',image:d.giftPictureUrl};
+    }
+    // 3. Last resort: random from catalog
+    if(!gift) gift=randomGift();
+    var count=d.repeatCount||1;
+    var diamonds=(d.diamondCount||1)*(count);
+    // Multiple bursts for big gifts
+    var bursts=1;
+    if(diamonds>=100) bursts=2;
+    if(diamonds>=1000) bursts=3;
+    if(diamonds>=10000) bursts=4;
+    for(var i=0;i<bursts;i++){
+        (function(g,c,u){setTimeout(function(){explode(g,c,u);},i*400);})(gift,count,d.uniqueId||d.nickname);
+    }
+});
+
+// Also react to gift streaks (in-progress)
+SF.on('giftStreak',function(d){
+    var gift=findGift(d.giftName);
+    if(!gift && d.giftPictureUrl) gift={name:d.giftName||'Gift',image:d.giftPictureUrl};
+    if(!gift) gift=randomGift();
+    if(gift) explode(gift,d.repeatCount||1,d.uniqueId||d.nickname);
+});
+
+SF.on('follow',function(d){
+    var gift=randomGift();
+    if(gift) explode(gift,1,d.uniqueId||d.nickname);
+});
+
+// ── Preview mode ──
+if(SF.preview){
+    function demoExplosion(){
+        var g=randomGift();
+        if(g){
+            var users=['GiftKing','BigFan','Supporter','NewViewer','LoyalFan'];
+            explode(g,Math.ceil(Math.random()*5),users[Math.floor(Math.random()*users.length)]);
+        }
+        setTimeout(demoExplosion,2500+Math.random()*2000);
+    }
+    // Wait for catalog to load
+    setTimeout(demoExplosion,1500);
+}
+})();
+</script>
+</body>
+</html>

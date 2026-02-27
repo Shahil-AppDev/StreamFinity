@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>StreamFinity | Emojify</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:transparent;overflow:hidden;height:100vh;width:100vw;position:relative}
+.emoji{position:absolute;bottom:-50px;pointer-events:none;animation:float linear forwards;filter:drop-shadow(0 0 6px rgba(255,255,255,.15));z-index:1}
+.emoji.burst{animation:burstUp ease-out forwards}
+@keyframes float{0%{transform:translateY(0) scale(var(--s,1)) rotate(0deg);opacity:1}60%{opacity:1}100%{transform:translateY(-115vh) scale(calc(var(--s,1)*.4)) rotate(var(--rot,30deg));opacity:0}}
+@keyframes burstUp{0%{transform:translate(0,0) scale(var(--s,1));opacity:1}100%{transform:translate(var(--tx,0),var(--ty,-200px)) scale(.3);opacity:0}}
+</style>
+</head>
+<body>
+<script src="/widgets/sf-bridge.js"></script>
+<script>
+(function(){
+'use strict';
+var emojis=['❤️','🔥','😂','👏','🎉','💯','😍','🥳','✨','💪','👀','🙌','💖','⭐','🎵','😎','🤩','💫','🌟','🫶'];
+
+function addEmoji(emoji,mode){
+    var el=document.createElement('div');
+    el.className='emoji'+(mode==='burst'?' burst':'');
+    el.textContent=emoji||emojis[Math.floor(Math.random()*emojis.length)];
+    var size=24+Math.random()*24;
+    var rot=-40+Math.random()*80;
+    el.style.setProperty('--s',(size/32).toFixed(2));
+    el.style.setProperty('--rot',rot+'deg');
+    el.style.fontSize='32px';
+    if(mode==='burst'){
+        el.style.left=40+Math.random()*20+'%';
+        el.style.bottom=10+Math.random()*20+'%';
+        el.style.setProperty('--tx',(Math.random()-0.5)*200+'px');
+        el.style.setProperty('--ty',-100-Math.random()*200+'px');
+        el.style.animationDuration=1+Math.random()*0.8+'s';
+    } else {
+        el.style.left=Math.random()*88+4+'%';
+        el.style.animationDuration=3+Math.random()*3+'s';
+    }
+    document.body.appendChild(el);
+    setTimeout(function(){el.remove();},7000);
+}
+
+function likeBurst(count){
+    var n=Math.min(count,15);
+    for(var i=0;i<n;i++)(function(j){setTimeout(function(){addEmoji('❤️','burst');},j*60);})(i);
+}
+
+SF.on('like',function(d){likeBurst(d.likeCount||1);});
+SF.on('chat',function(d){
+    var m=d.comment||'';
+    var found=m.match(/[\u{1F600}-\u{1F64F}\u{1F300}-\u{1F5FF}\u{1F680}-\u{1F6FF}\u{1F1E0}-\u{1F1FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\u{1FA00}-\u{1FAFF}\u{1F900}-\u{1F9FF}]/gu);
+    if(found)found.slice(0,6).forEach(function(em,i){setTimeout(function(){addEmoji(em);},i*120);});
+});
+SF.on('gift',function(d){
+    for(var i=0;i<Math.min(d.repeatCount||1,8);i++)(function(j){setTimeout(function(){addEmoji('🎁','burst');},j*80);})(i);
+});
+SF.on('follow',function(){addEmoji('💜');addEmoji('✨');});
+SF.on('share',function(){addEmoji('🔗');addEmoji('💫');});
+
+if(SF.preview){
+    setInterval(function(){addEmoji();},700);
+    setInterval(function(){likeBurst(5);},4000);
+}
+})();
+</script>
+</body>
+</html>

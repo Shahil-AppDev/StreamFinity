@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>StreamFinity | Social Media Rotator</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',system-ui,sans-serif;background:transparent;display:flex;align-items:center;justify-content:center;height:100vh;overflow:hidden}
+.rotator{width:320px;position:relative}
+.slide{position:absolute;inset:0;display:flex;align-items:center;gap:14px;padding:16px 20px;border-radius:14px;background:rgba(15,15,25,.82);-webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px);border:1px solid rgba(255,255,255,.08);opacity:0;transform:translateY(8px);transition:opacity .5s cubic-bezier(.22,1,.36,1),transform .5s cubic-bezier(.22,1,.36,1);pointer-events:none}
+.slide.active{opacity:1;transform:translateY(0);pointer-events:auto}
+.slide-icon{width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;position:relative;overflow:hidden}
+.slide-icon::after{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(255,255,255,.1),transparent);border-radius:inherit}
+.slide-text{flex:1;min-width:0}
+.slide-platform{font-size:14px;font-weight:700;margin-bottom:2px}
+.slide-handle{font-size:12px;color:rgba(255,255,255,.45)}
+.slide-arrow{font-size:10px;color:rgba(255,255,255,.2);flex-shrink:0}
+.dots{display:flex;justify-content:center;gap:6px;margin-top:70px}
+.dot{width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,.12);transition:all .4s ease}
+.dot.active{width:20px;border-radius:3px;box-shadow:0 0 6px var(--ac,rgba(139,92,246,.4))}
+.progress{position:absolute;bottom:0;left:0;height:2px;border-radius:0 0 14px 14px;transition:width linear}
+</style>
+</head>
+<body>
+<div class="rotator">
+    <div id="slides" style="position:relative;height:76px"></div>
+    <div class="dots" id="dots"></div>
+</div>
+<script src="/widgets/sf-bridge.js"></script>
+<script>
+(function(){
+'use strict';
+var socials=[
+    {icon:'<svg width="20" height="20" viewBox="0 0 24 24" fill="white"><path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-2.88 2.5 2.89 2.89 0 01-2.89-2.89 2.89 2.89 0 012.89-2.89c.28 0 .54.04.79.1v-3.5a6.37 6.37 0 00-.79-.05A6.34 6.34 0 003.15 15.2a6.34 6.34 0 006.34 6.34 6.34 6.34 0 006.34-6.34V8.73a8.19 8.19 0 004.76 1.52V6.8a4.83 4.83 0 01-1-.11z"/></svg>',platform:'TikTok',handle:'@streamer',color:'#ff0050',bg:'rgba(255,0,80,.12)',border:'rgba(255,0,80,.25)'},
+    {icon:'<svg width="20" height="20" viewBox="0 0 24 24" fill="white"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z"/></svg>',platform:'Instagram',handle:'@streamer',color:'#E1306C',bg:'rgba(225,48,108,.12)',border:'rgba(225,48,108,.25)'},
+    {icon:'<svg width="20" height="20" viewBox="0 0 24 24" fill="white"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>',platform:'X (Twitter)',handle:'@streamer',color:'#fff',bg:'rgba(255,255,255,.08)',border:'rgba(255,255,255,.15)'},
+    {icon:'<svg width="20" height="20" viewBox="0 0 24 24" fill="white"><path d="M20.317 4.37a19.791 19.791 0 00-4.885-1.515.074.074 0 00-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 00-5.487 0 12.64 12.64 0 00-.617-1.25.077.077 0 00-.079-.037A19.736 19.736 0 003.677 4.37a.07.07 0 00-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 00.031.057 19.9 19.9 0 005.993 3.03.078.078 0 00.084-.028c.462-.63.874-1.295 1.226-1.994a.076.076 0 00-.041-.106 13.107 13.107 0 01-1.872-.892.077.077 0 01-.008-.128 10.2 10.2 0 00.372-.292.074.074 0 01.077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 01.078.01c.12.098.246.198.373.292a.077.077 0 01-.006.127 12.299 12.299 0 01-1.873.892.077.077 0 00-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 00.084.028 19.839 19.839 0 006.002-3.03.077.077 0 00.032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 00-.031-.03z"/></svg>',platform:'Discord',handle:'discord.gg/example',color:'#5865F2',bg:'rgba(88,101,242,.12)',border:'rgba(88,101,242,.25)'},
+    {icon:'<svg width="20" height="20" viewBox="0 0 24 24" fill="white"><path d="M23.498 6.186a3.016 3.016 0 00-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 00.502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 002.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 002.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>',platform:'YouTube',handle:'@streamer',color:'#FF0000',bg:'rgba(255,0,0,.12)',border:'rgba(255,0,0,.2)'},
+];
+var interval=3500;
+var current=0;
+var slidesEl=document.getElementById('slides');
+var dotsEl=document.getElementById('dots');
+
+function render(){
+    if(!slidesEl.children.length){
+        slidesEl.innerHTML=socials.map(function(s,i){
+            return '<div class="slide'+(i===0?' active':'')+'" data-idx="'+i+'"><div class="slide-icon" style="background:'+s.bg+';border:1px solid '+s.border+'">'+s.icon+'</div><div class="slide-text"><div class="slide-platform" style="color:'+s.color+'">'+s.platform+'</div><div class="slide-handle">'+s.handle+'</div></div><div class="slide-arrow">→</div><div class="progress" style="background:'+s.color+'" id="prog'+i+'"></div></div>';
+        }).join('');
+        dotsEl.innerHTML=socials.map(function(s,i){return '<div class="dot'+(i===0?' active':'')+'" style="--ac:'+s.color+';background:'+(i===0?s.color:'')+'"></div>';}).join('');
+    } else {
+        for(var i=0;i<socials.length;i++){
+            var sl=slidesEl.children[i];var dt=dotsEl.children[i];
+            if(i===current){sl.classList.add('active');dt.classList.add('active');dt.style.background=socials[i].color;}
+            else{sl.classList.remove('active');dt.classList.remove('active');dt.style.background='';}
+        }
+    }
+    animateProgress();
+}
+function animateProgress(){
+    socials.forEach(function(_,i){var el=document.getElementById('prog'+i);if(el)el.style.width='0%';});
+    var p=document.getElementById('prog'+current);
+    if(!p)return;
+    p.style.transition='none';p.style.width='0%';
+    requestAnimationFrame(function(){requestAnimationFrame(function(){p.style.transition='width '+interval+'ms linear';p.style.width='100%';});});
+}
+function next(){current=(current+1)%socials.length;render();}
+render();
+var timer=setInterval(next,interval);
+})();
+</script>
+</body>
+</html>

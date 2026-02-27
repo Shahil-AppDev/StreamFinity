@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>StreamFinity | Ranking</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',system-ui,sans-serif;background:transparent;color:#fff;padding:12px}
+.hdr{font-size:15px;font-weight:700;text-align:center;margin-bottom:12px;display:flex;align-items:center;justify-content:center;gap:8px}
+.tabs{display:flex;justify-content:center;gap:6px;margin-bottom:14px}
+.tab{padding:6px 16px;border-radius:20px;font-size:11px;font-weight:600;cursor:pointer;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.08);color:rgba(255,255,255,.6);transition:all .2s;text-transform:uppercase;letter-spacing:.5px}
+.tab:hover{background:rgba(255,255,255,.1);color:#fff}
+.tab.active{background:linear-gradient(135deg,#8b5cf6,#6366f1);color:#fff;border-color:transparent}
+.e{display:flex;align-items:center;gap:10px;padding:8px 14px;margin-bottom:5px;border-radius:12px;background:rgba(15,15,25,.7);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,.05);animation:eIn .4s cubic-bezier(.22,1,.36,1)}
+.e.top{background:linear-gradient(135deg,rgba(139,92,246,.12),rgba(99,102,241,.06));border-color:rgba(139,92,246,.2)}
+.rk{width:28px;height:28px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;flex-shrink:0;background:rgba(255,255,255,.06)}
+.rk-1{background:linear-gradient(135deg,#f59e0b,#f97316);color:#000}
+.rk-2{background:linear-gradient(135deg,#94a3b8,#64748b);color:#000}
+.rk-3{background:linear-gradient(135deg,#b45309,#92400e);color:#fff}
+.av{width:30px;height:30px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;flex-shrink:0;position:relative;overflow:hidden}
+.av::after{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(255,255,255,.15),transparent);border-radius:inherit}
+.nm{flex:1;font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sc{font-size:13px;font-weight:800;color:#a78bfa}
+@keyframes eIn{from{opacity:0;transform:translateX(-16px)}to{opacity:1;transform:translateX(0)}}
+</style>
+</head>
+<body>
+<div class="hdr">🏅 Ranking</div>
+<div class="tabs"><button class="tab active" onclick="showTab('all',this)">All</button><button class="tab" onclick="showTab('gifts',this)">Gifts</button><button class="tab" onclick="showTab('likes',this)">Likes</button></div>
+<div id="list"></div>
+<script src="/widgets/sf-bridge.js"></script>
+<script>
+(function(){
+'use strict';
+var palette=['#8b5cf6','#3b82f6','#10b981','#f59e0b','#ef4444','#ec4899','#6366f1','#14b8a6'];
+var users={};
+var current='all';
+
+function hash(s){var h=0;for(var i=0;i<s.length;i++)h=((h<<5)-h)+s.charCodeAt(i);return Math.abs(h);}
+
+function getUser(name){
+    if(!users[name]) users[name]={gifts:0,likes:0};
+    return users[name];
+}
+
+window.showTab=function(t,btn){
+    current=t;
+    document.querySelectorAll('.tab').forEach(function(b){b.classList.remove('active');});
+    if(btn) btn.classList.add('active');
+    render();
+};
+
+function render(){
+    var arr=[];
+    for(var name in users){
+        var u=users[name];
+        var score=current==='gifts'?u.gifts:current==='likes'?u.likes:(u.gifts+u.likes);
+        if(score>0) arr.push({name:name,score:score});
+    }
+    arr.sort(function(a,b){return b.score-a.score;});
+    var listEl=document.getElementById('list');
+    listEl.innerHTML=arr.slice(0,10).map(function(e,i){
+        var rkCls=i===0?'rk rk-1':i===1?'rk rk-2':i===2?'rk rk-3':'rk';
+        var c=palette[hash(e.name)%palette.length];
+        return '<div class="e'+(i===0?' top':'')+'"><div class="'+rkCls+'">'+(i+1)+'</div><div class="av" style="background:'+c+'">'+e.name.charAt(0).toUpperCase()+'</div><div class="nm">@'+e.name+'</div><div class="sc">'+e.score.toLocaleString()+'</div></div>';
+    }).join('');
+}
+
+SF.on('gift',function(d){var u=getUser(d.uniqueId||'User');u.gifts+=(d.diamondCount||1);render();});
+SF.on('like',function(d){var u=getUser(d.uniqueId||'User');u.likes+=(d.likeCount||1);render();});
+
+if(SF.preview){
+    users={GiftKing:{gifts:2500,likes:700},HeartQueen:{gifts:300,likes:1800},BigFan:{gifts:1200,likes:300},Viewer42:{gifts:100,likes:700},Supporter:{gifts:600,likes:200}};
+    render();
+    setInterval(function(){
+        var names=Object.keys(users);
+        var n=names[Math.floor(Math.random()*names.length)];
+        if(Math.random()>0.5) users[n].gifts+=Math.ceil(Math.random()*100);
+        else users[n].likes+=Math.ceil(Math.random()*50);
+        render();
+    },3000);
+}
+})();
+</script>
+</body>
+</html>

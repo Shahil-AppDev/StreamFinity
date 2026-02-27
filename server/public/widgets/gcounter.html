@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>StreamFinity | Gift Counter</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',system-ui,sans-serif;background:transparent;color:#fff;display:flex;align-items:center;justify-content:center;height:100vh}
+.gc{text-align:center;padding:20px 40px;border-radius:16px;background:rgba(15,15,25,.8);-webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px);border:1px solid rgba(255,255,255,.08)}
+.gc-icon{font-size:36px;margin-bottom:4px}
+.gc-num{font-size:48px;font-weight:800;font-variant-numeric:tabular-nums;background:linear-gradient(135deg,#f59e0b,#ef4444);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+.gc-num.bump{animation:bump .3s ease}
+.gc-label{font-size:12px;color:rgba(255,255,255,.45);margin-top:4px;font-weight:500;text-transform:uppercase;letter-spacing:1px}
+@keyframes bump{0%{transform:scale(1)}50%{transform:scale(1.1)}100%{transform:scale(1)}}
+</style>
+</head>
+<body>
+<div class="gc">
+    <div class="gc-icon">🎁</div>
+    <div class="gc-num" id="num">0</div>
+    <div class="gc-label" id="lbl">gifts received</div>
+</div>
+<script src="/widgets/sf-bridge.js"></script>
+<script>
+(function(){
+'use strict';
+var numEl=document.getElementById('num');
+var params=new URLSearchParams(location.search);
+var filterGift=params.get('c')||'';
+var count=0;
+
+function update(){
+    numEl.textContent=count.toLocaleString();
+    numEl.classList.remove('bump');void numEl.offsetWidth;numEl.classList.add('bump');
+}
+if(filterGift) document.getElementById('lbl').textContent=filterGift+' received';
+
+SF.on('gift',function(d){
+    if(filterGift && d.giftName && d.giftName.toLowerCase()!==filterGift.toLowerCase()) return;
+    count+=(d.repeatCount||1);
+    update();
+});
+
+if(SF.preview){setInterval(function(){count+=Math.ceil(Math.random()*3);update();},3000);}
+})();
+</script>
+</body>
+</html>

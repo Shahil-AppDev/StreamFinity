@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>StreamFinity | TTS Chat</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',system-ui,sans-serif;background:transparent;overflow:hidden;height:100vh;width:100vw;display:flex;align-items:flex-end;justify-content:center;padding:20px}
+.tts-popup{position:relative;max-width:420px;width:100%;padding:20px 24px;border-radius:18px;background:rgba(15,15,25,.85);-webkit-backdrop-filter:blur(20px);backdrop-filter:blur(20px);border:1px solid rgba(139,92,246,.2);box-shadow:0 0 60px rgba(139,92,246,.1),0 12px 40px rgba(0,0,0,.4);opacity:0;transform:translateY(16px) scale(.95);transition:opacity .4s cubic-bezier(.22,1,.36,1),transform .4s cubic-bezier(.22,1,.36,1);pointer-events:none}
+.tts-popup.show{opacity:1;transform:translateY(0) scale(1);pointer-events:auto}
+.tts-popup.hide{opacity:0;transform:translateY(-12px) scale(.95)}
+.tts-glow{position:absolute;top:-20px;left:20px;width:80px;height:80px;background:radial-gradient(circle,rgba(139,92,246,.2),transparent 70%);pointer-events:none;border-radius:50%}
+.tts-header{display:flex;align-items:center;gap:12px;margin-bottom:12px}
+.tts-avatar{width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:700;color:#fff;flex-shrink:0;border:2px solid rgba(255,255,255,.1);overflow:hidden;position:relative}
+.tts-avatar img{width:100%;height:100%;object-fit:cover;border-radius:50%}
+.tts-avatar::after{content:'';position:absolute;inset:0;background:linear-gradient(180deg,rgba(255,255,255,.12),transparent 50%);border-radius:inherit;pointer-events:none}
+.tts-user{font-size:13px;font-weight:700;color:#a78bfa}
+.tts-badge{font-size:9px;color:rgba(255,255,255,.35);background:rgba(255,255,255,.06);padding:2px 8px;border-radius:10px;margin-left:6px}
+.tts-type{margin-left:auto;font-size:10px;font-weight:600;padding:3px 10px;border-radius:8px;flex-shrink:0}
+.tts-type.chat{background:rgba(59,130,246,.12);color:#60a5fa;border:1px solid rgba(59,130,246,.2)}
+.tts-type.gift{background:rgba(245,200,66,.12);color:#f5c842;border:1px solid rgba(245,200,66,.2)}
+.tts-text{font-size:15px;color:#fff;line-height:1.5;word-break:break-word}
+.tts-wave{display:flex;align-items:center;gap:3px;margin-top:10px;height:16px}
+.tts-bar{width:3px;border-radius:2px;background:linear-gradient(180deg,#8b5cf6,#6366f1);animation:ttsWave .6s ease infinite alternate}
+.tts-bar:nth-child(1){height:6px;animation-delay:0s}
+.tts-bar:nth-child(2){height:12px;animation-delay:.1s}
+.tts-bar:nth-child(3){height:8px;animation-delay:.2s}
+.tts-bar:nth-child(4){height:14px;animation-delay:.3s}
+.tts-bar:nth-child(5){height:6px;animation-delay:.4s}
+.tts-bar:nth-child(6){height:10px;animation-delay:.15s}
+.tts-bar:nth-child(7){height:4px;animation-delay:.35s}
+.tts-wave.paused .tts-bar{animation-play-state:paused;height:3px!important}
+.tts-gift-img{width:32px;height:32px;object-fit:contain;border-radius:8px;margin-right:8px;vertical-align:middle}
+@keyframes ttsWave{0%{height:var(--h,4px)}100%{height:calc(var(--h,4px) + 10px)}}
+</style>
+</head>
+<body>
+<div class="tts-popup" id="popup">
+    <div class="tts-glow"></div>
+    <div class="tts-header">
+        <div class="tts-avatar" id="avatar">?</div>
+        <div>
+            <span class="tts-user" id="user">User</span>
+            <span class="tts-badge" id="badge"></span>
+        </div>
+        <div class="tts-type chat" id="type">CHAT</div>
+    </div>
+    <div class="tts-text" id="text"></div>
+    <div class="tts-wave" id="wave">
+        <div class="tts-bar"></div><div class="tts-bar"></div><div class="tts-bar"></div>
+        <div class="tts-bar"></div><div class="tts-bar"></div><div class="tts-bar"></div>
+        <div class="tts-bar"></div>
+    </div>
+</div>
+<script src="/widgets/sf-bridge.js"></script>
+<script>
+(function(){
+'use strict';
+var popup=document.getElementById('popup');
+var queue=[];
+var speaking=false;
+var synth=window.speechSynthesis;
+var voices=[];
+var userVoiceMap={};
+
+// ── Config (from URL params or defaults) ──
+var params=new URLSearchParams(location.search);
+var cfg={
+    enabled: params.get('enabled')!=='false',
+    volume: +(params.get('volume')||70)/100,
+    speed: +(params.get('speed')||100)/100,
+    pitch: +(params.get('pitch')||100)/100,
+    voice: params.get('voice')||'',
+    readGifts: params.get('readGifts')!=='false',
+    readChat: params.get('readChat')!=='false',
+    maxLength: +(params.get('maxLength')||200),
+    maxQueue: +(params.get('maxQueue')||15),
+    randomVoice: params.get('randomVoice')==='true',
+    allowedUsers: params.get('allowedUsers')||'all',
+};
+
+// ── Load voices ──
+function loadVoices(){
+    voices=synth.getVoices().filter(function(v){return v.lang.match(/^(en|fr|es|de|pt|it|ja|ko|zh|ar|ru|hi|nl|pl|sv|tr)/);});
+    if(!voices.length) voices=synth.getVoices();
+}
+loadVoices();
+if(synth.onvoiceschanged!==undefined) synth.onvoiceschanged=loadVoices;
+
+var gradients=[
+    'linear-gradient(135deg,#8b5cf6,#6366f1)','linear-gradient(135deg,#ec4899,#f43f5e)',
+    'linear-gradient(135deg,#3b82f6,#06b6d4)','linear-gradient(135deg,#10b981,#34d399)',
+    'linear-gradient(135deg,#f59e0b,#f97316)','linear-gradient(135deg,#ef4444,#f97316)',
+    'linear-gradient(135deg,#14b8a6,#06b6d4)','linear-gradient(135deg,#a855f7,#9333ea)',
+];
+
+function getVoiceForUser(userId){
+    if(!cfg.randomVoice) return null;
+    if(userVoiceMap[userId]) return userVoiceMap[userId];
+    if(!voices.length) return null;
+    var v=voices[Math.floor(Math.random()*voices.length)];
+    userVoiceMap[userId]=v;
+    return v;
+}
+
+function findVoice(name){
+    if(!name||!voices.length) return null;
+    var lower=name.toLowerCase();
+    return voices.find(function(v){return v.name.toLowerCase().indexOf(lower)!==-1;})||null;
+}
+
+// ── Enqueue a TTS message ──
+function enqueue(data){
+    if(!cfg.enabled) return;
+    if(!synth) return;
+    if(queue.length>=cfg.maxQueue) return;
+    var text=(data.text||'').trim();
+    if(!text) return;
+    if(text.length>cfg.maxLength) text=text.substring(0,cfg.maxLength)+'...';
+    queue.push(data);
+    if(!speaking) processQueue();
+}
+
+function processQueue(){
+    if(!queue.length){speaking=false;hidePopup();return;}
+    speaking=true;
+    var d=queue.shift();
+    showPopup(d);
+    var utter=new SpeechSynthesisUtterance(d.text);
+    utter.volume=cfg.volume;
+    utter.rate=cfg.speed;
+    utter.pitch=cfg.pitch;
+    // Voice selection: per-user random > configured > default
+    var voice=getVoiceForUser(d.userId||d.user)||findVoice(cfg.voice);
+    if(voice) utter.voice=voice;
+    utter.onend=function(){
+        hidePopup();
+        setTimeout(processQueue,400);
+    };
+    utter.onerror=function(){
+        hidePopup();
+        setTimeout(processQueue,200);
+    };
+    // Cancel any stuck speech
+    synth.cancel();
+    setTimeout(function(){synth.speak(utter);},50);
+}
+
+function showPopup(d){
+    var grad=gradients[Math.abs(hashCode(d.user||''))%gradients.length];
+    var avatarEl=document.getElementById('avatar');
+    if(d.profilePictureUrl){
+        avatarEl.innerHTML='<img src="'+d.profilePictureUrl+'" onerror="this.parentNode.textContent=\''+((d.user||'?').charAt(0).toUpperCase())+'\'">';
+    } else {
+        avatarEl.textContent=(d.user||'?').charAt(0).toUpperCase();
+    }
+    avatarEl.style.background=grad;
+    document.getElementById('user').textContent='@'+(d.user||'User');
+    document.getElementById('badge').textContent=d.badge||'';
+    var typeEl=document.getElementById('type');
+    if(d.type==='gift'){
+        typeEl.textContent='GIFT';typeEl.className='tts-type gift';
+    } else {
+        typeEl.textContent='CHAT';typeEl.className='tts-type chat';
+    }
+    var textHtml=escapeHtml(d.text);
+    if(d.giftImg) textHtml='<img class="tts-gift-img" src="'+d.giftImg+'" alt="">'+textHtml;
+    document.getElementById('text').innerHTML=textHtml;
+    document.getElementById('wave').classList.remove('paused');
+    popup.className='tts-popup show';
+}
+
+function hidePopup(){
+    document.getElementById('wave').classList.add('paused');
+    popup.className='tts-popup hide';
+}
+
+function escapeHtml(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function hashCode(s){var h=0;for(var i=0;i<s.length;i++){h=((h<<5)-h)+s.charCodeAt(i);h|=0;}return h;}
+
+// ── Listen to TikTok events ──
+SF.on('chat',function(d){
+    if(!cfg.readChat) return;
+    var comment=d.comment||'';
+    if(!comment||comment.startsWith('!')) return;
+    enqueue({
+        user:d.uniqueId||d.nickname||'Viewer',
+        userId:d.userId||d.uniqueId,
+        text:comment,
+        type:'chat',
+        profilePictureUrl:d.profilePictureUrl,
+        badge:''
+    });
+});
+
+SF.on('gift',function(d){
+    if(!cfg.readGifts) return;
+    var name=d.giftName||'a gift';
+    var count=d.repeatCount||1;
+    var text=(d.uniqueId||'Someone')+' sent '+count+'x '+name+'!';
+    enqueue({
+        user:d.uniqueId||d.nickname||'Viewer',
+        userId:d.userId||d.uniqueId,
+        text:text,
+        type:'gift',
+        profilePictureUrl:d.profilePictureUrl,
+        giftImg:d.giftPictureUrl||null,
+        badge:'💎 '+(d.diamondCount||0)
+    });
+});
+
+// ── Preview mode ──
+if(SF.preview){
+    var demoMsgs=[
+        {user:'StreamFan',text:'Hello everyone! Welcome to the stream!',type:'chat',delay:1500},
+        {user:'GiftKing',text:'GiftKing sent 5x Rose!',type:'gift',delay:6000},
+        {user:'NewViewer',text:'This is my first time here, love it!',type:'chat',delay:11000},
+        {user:'MusicLover',text:'Can you play some music?',type:'chat',delay:16000},
+        {user:'BigSpender',text:'BigSpender sent 1x Drama Queen!',type:'gift',delay:21000},
+    ];
+    demoMsgs.forEach(function(m){
+        setTimeout(function(){
+            enqueue({user:m.user,userId:m.user,text:m.text,type:m.type,badge:m.type==='gift'?'💎 500':''});
+        },m.delay);
+    });
+}
+})();
+</script>
+</body>
+</html>

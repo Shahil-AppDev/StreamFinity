@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>StreamFinity | User Info</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',system-ui,sans-serif;background:transparent;color:#fff;display:flex;align-items:center;justify-content:center;height:100vh}
+.card{background:rgba(15,15,25,.82);-webkit-backdrop-filter:blur(20px);backdrop-filter:blur(20px);border:1px solid rgba(255,255,255,.08);border-radius:20px;padding:28px 32px;text-align:center;min-width:280px;position:relative;overflow:hidden}
+.card-glow{position:absolute;top:-40px;left:50%;transform:translateX(-50%);width:120px;height:120px;background:radial-gradient(circle,rgba(139,92,246,.2),transparent 70%);pointer-events:none}
+.avatar{width:72px;height:72px;border-radius:50%;background:linear-gradient(135deg,#8b5cf6,#6366f1);margin:0 auto 14px;display:flex;align-items:center;justify-content:center;font-size:28px;font-weight:800;position:relative;border:3px solid rgba(139,92,246,.3);box-shadow:0 0 24px rgba(139,92,246,.2);overflow:hidden}
+.avatar img{width:100%;height:100%;object-fit:cover;border-radius:50%}
+.avatar::after{content:'';position:absolute;inset:0;background:linear-gradient(180deg,rgba(255,255,255,.15),transparent 50%);border-radius:inherit;pointer-events:none}
+.status{position:absolute;bottom:2px;right:2px;width:14px;height:14px;border-radius:50%;border:2px solid rgba(15,15,25,.9);z-index:2}
+.status.live{background:#22c55e;box-shadow:0 0 8px rgba(34,197,94,.5)}
+.status.offline{background:rgba(255,255,255,.2)}
+.username{font-size:18px;font-weight:800;margin-bottom:2px;position:relative;z-index:1}
+.uid{font-size:11px;color:rgba(255,255,255,.35);margin-bottom:18px;position:relative;z-index:1}
+.stats{display:flex;gap:4px;position:relative;z-index:1}
+.stat{flex:1;text-align:center;padding:10px 8px;border-radius:10px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.05)}
+.stat-val{font-size:18px;font-weight:800;line-height:1.2}
+.stat-lbl{font-size:9px;color:rgba(255,255,255,.35);text-transform:uppercase;letter-spacing:.06em;margin-top:2px}
+.stat-val.viewers{color:#60a5fa}
+.stat-val.likes{color:#f472b6}
+.stat-val.gifts{color:#f5c842}
+.stat-val.diamonds{color:#a78bfa}
+</style>
+</head>
+<body>
+<div class="card">
+    <div class="card-glow"></div>
+    <div class="avatar" id="avatar">
+        <div class="status offline" id="status"></div>
+        ?
+    </div>
+    <div class="username" id="username">Not Connected</div>
+    <div class="uid" id="uid">Connect to TikTok LIVE</div>
+    <div class="stats">
+        <div class="stat"><div class="stat-val viewers" id="viewers">0</div><div class="stat-lbl">Viewers</div></div>
+        <div class="stat"><div class="stat-val likes" id="likes">0</div><div class="stat-lbl">Likes</div></div>
+        <div class="stat"><div class="stat-val gifts" id="gifts">0</div><div class="stat-lbl">Gifts</div></div>
+        <div class="stat"><div class="stat-val diamonds" id="diamonds">0</div><div class="stat-lbl">Diamonds</div></div>
+    </div>
+</div>
+<script src="/widgets/sf-bridge.js"></script>
+<script>
+(function(){
+'use strict';
+var totalLikes=0,totalGifts=0,totalDiamonds=0;
+
+SF.on('roomUser',function(d){
+    if(d.viewerCount!==undefined) document.getElementById('viewers').textContent=d.viewerCount.toLocaleString();
+});
+SF.on('like',function(d){
+    totalLikes+=(d.likeCount||1);
+    document.getElementById('likes').textContent=totalLikes.toLocaleString();
+});
+SF.on('gift',function(d){
+    totalGifts+=(d.repeatCount||1);
+    totalDiamonds+=(d.diamondCount||1)*(d.repeatCount||1);
+    document.getElementById('gifts').textContent=totalGifts.toLocaleString();
+    document.getElementById('diamonds').textContent=totalDiamonds.toLocaleString();
+});
+SF.on('connected',function(d){
+    if(d.uniqueId){
+        document.getElementById('username').textContent='@'+d.uniqueId;
+        document.getElementById('uid').textContent='TikTok LIVE';
+        document.getElementById('avatar').innerHTML='<div class="status live" id="status"></div>'+d.uniqueId.charAt(0).toUpperCase();
+        if(d.profilePictureUrl) document.getElementById('avatar').innerHTML='<div class="status live" id="status"></div><img src="'+d.profilePictureUrl+'" alt="">';
+    }
+});
+
+if(SF.preview){
+    document.getElementById('username').textContent='@StreamFan';
+    document.getElementById('uid').textContent='TikTok LIVE — Online';
+    document.getElementById('avatar').innerHTML='<div class="status live"></div>S';
+    document.getElementById('viewers').textContent='247';
+    document.getElementById('likes').textContent='1,203';
+    document.getElementById('gifts').textContent='42';
+    document.getElementById('diamonds').textContent='8,540';
+}
+})();
+</script>
+</body>
+</html>
